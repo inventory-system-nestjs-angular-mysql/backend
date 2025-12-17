@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import databaseConfig from './infrastructure/config/database.config';
 import { StockGroupModule } from './presentation/stockgroup/stockgroup.module';
 import { StockModule } from './presentation/stock/stock.module';
+import { UnitModule } from './presentation/unit/unit.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StockModule } from './presentation/stock/stock.module';
     }),
     StockGroupModule,
     StockModule,
+    UnitModule,
   ],
 })
 export class AppModule {}
