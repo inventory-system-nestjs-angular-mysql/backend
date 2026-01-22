@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { IStockGroupRepository } from '../../../../core/stockgroup/repositories/stockgroup.repository.interface';
 import { STOCK_GROUP_REPOSITORY } from '../../../../core/stockgroup/repositories/repository.tokens';
+import { STOCK_REPOSITORY } from '../../../../core/stock/repositories/repository.tokens';
+import { IStockRepository } from '../../../../core/stock/repositories/stock.repository.interface';
 import { StockGroup } from '../../../../core/stockgroup/entities/stockgroup.entity';
 import { CreateStockGroupDto } from '../../../../presentation/stockgroup/dto/create-stockgroup.dto';
 import { UpdateStockGroupDto } from '../../../../presentation/stockgroup/dto/update-stockgroup.dto';
@@ -17,6 +20,8 @@ export class StockGroupService extends BaseService {
   constructor(
     @Inject(STOCK_GROUP_REPOSITORY)
     private readonly stockGroupRepository: IStockGroupRepository,
+    @Inject(STOCK_REPOSITORY)
+    private readonly stockRepository: IStockRepository,
   ) {
     super();
   }
@@ -140,6 +145,15 @@ export class StockGroupService extends BaseService {
         `StockGroup with id '${id}' not found`,
       );
     }
+
+    // Check if any Stock records reference this StockGroup
+    const stockCount = await this.stockRepository.countByStockGroupId(id);
+    if (stockCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete StockGroup because it is referenced by ${stockCount} stock item(s). Please remove or reassign the stock items first.`,
+      );
+    }
+
     await this.stockGroupRepository.delete(id);
   }
 

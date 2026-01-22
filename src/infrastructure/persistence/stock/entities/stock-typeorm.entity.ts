@@ -4,9 +4,12 @@ import {
   PrimaryColumn,
   Index,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Stock } from '../../../../core/stock/entities/stock.entity';
 import { StockDetailTypeOrmEntity } from './stock-detail-typeorm.entity';
+import { StockGroupTypeOrmEntity } from '../../stockgroup/entities/stockgroup-typeorm.entity';
 
 /**
  * Infrastructure Layer - TypeORM Entity
@@ -27,6 +30,10 @@ export class StockTypeOrmEntity {
 
   @Column({ type: 'char', length: 23, name: 'cSTKfkGRP', default: '' })
   cSTKfkGRP: string;
+
+  @ManyToOne(() => StockGroupTypeOrmEntity, { nullable: true, onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
+  @JoinColumn({ name: 'cSTKfkGRP', referencedColumnName: 'cGRPpk' })
+  stockGroup: StockGroupTypeOrmEntity | null;
 
   @Column({ type: 'decimal', precision: 15, scale: 2, name: 'nSTKmin', default: 0.0 })
   nSTKmin: number;

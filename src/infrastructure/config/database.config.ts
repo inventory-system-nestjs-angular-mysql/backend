@@ -3,6 +3,12 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { StockGroupTypeOrmEntity } from '../persistence/stockgroup/entities/stockgroup-typeorm.entity';
 import { StockDetailTypeOrmEntity, StockTypeOrmEntity } from '../persistence/stock';
 import { UnitTypeOrmEntity } from '../persistence/unit';
+import { BankTypeOrmEntity } from '../persistence/bank';
+import { WarehouseTypeOrmEntity } from '../persistence/warehouse';
+import { CityTypeOrmEntity } from '../persistence/city';
+import { BrandTypeOrmEntity } from '../persistence/brand';
+import { EntityTypeOrmEntity } from '../persistence/entity/entities/entity-typeorm.entity';
+import { SalesmanTypeOrmEntity } from '../persistence/salesman/entities/salesman-typeorm.entity';
 
 export default registerAs(
   'database',
@@ -13,7 +19,7 @@ export default registerAs(
     username: process.env.DB_USERNAME || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_DATABASE || 'eisdata',
-    entities: [StockGroupTypeOrmEntity, StockTypeOrmEntity, StockDetailTypeOrmEntity, UnitTypeOrmEntity],
+    entities: [StockGroupTypeOrmEntity, StockTypeOrmEntity, StockDetailTypeOrmEntity, UnitTypeOrmEntity,BankTypeOrmEntity, WarehouseTypeOrmEntity, CityTypeOrmEntity, BrandTypeOrmEntity, EntityTypeOrmEntity, SalesmanTypeOrmEntity],
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',
     charset: 'utf8mb4',
