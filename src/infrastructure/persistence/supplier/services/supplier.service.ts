@@ -72,7 +72,7 @@ export class SupplierService extends BaseService {
       billToAddress2: createSupplierDto.billToAddress2 ?? null,
       billToAddress3: createSupplierDto.billToAddress3 ?? null,
       billToAddress4: createSupplierDto.billToAddress4 ?? null,
-      createDate: createSupplierDto.createDate ?? new Date(),
+      createDate: createSupplierDto.createDate,
       lastDate: createSupplierDto.lastDate ?? null,
       isSuspended: createSupplierDto.isSuspended ?? false,
       memo: createSupplierDto.memo ?? null,

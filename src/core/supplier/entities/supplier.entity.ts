@@ -22,8 +22,8 @@ export class Supplier {
   billToAddress2: string | null;
   billToAddress3: string | null;
   billToAddress4: string | null;
-  createDate: Date | null;
-  lastDate: Date | null;
+  createDate: string | null;
+  lastDate: string | null;
   isSuspended: boolean;
   memo: string | null;
   isSupplier: boolean; // nENTsupp - true for suppliers

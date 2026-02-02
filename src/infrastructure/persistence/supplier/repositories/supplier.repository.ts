@@ -129,8 +129,8 @@ export class SupplierRepository implements ISupplierRepository {
     domain.billToAddress2 = entity.cENTbadd2;
     domain.billToAddress3 = entity.cENTbadd3;
     domain.billToAddress4 = entity.cENTbadd4;
-    domain.createDate = entity.dENTcreate;
-    domain.lastDate = entity.dENTlast;
+    domain.createDate = entity.dENTcreate ? entity.dENTcreate.toString() : null;
+    domain.lastDate = entity.dENTlast ? entity.dENTlast.toString() : null;
     domain.isSuspended = entity.nENTsuspend === 1;
     domain.memo = entity.cENTmemo;
     domain.isSupplier = entity.nENTsupp === 1;
@@ -168,8 +168,8 @@ export class SupplierRepository implements ISupplierRepository {
     if (domain.billToAddress2 !== undefined) entity.cENTbadd2 = domain.billToAddress2;
     if (domain.billToAddress3 !== undefined) entity.cENTbadd3 = domain.billToAddress3;
     if (domain.billToAddress4 !== undefined) entity.cENTbadd4 = domain.billToAddress4;
-    if (domain.createDate !== undefined) entity.dENTcreate = domain.createDate;
-    if (domain.lastDate !== undefined) entity.dENTlast = domain.lastDate;
+    if (domain.createDate !== undefined) entity.dENTcreate = new Date(domain.createDate);
+    if (domain.lastDate !== undefined) entity.dENTlast = new Date(domain.lastDate);
     if (domain.isSuspended !== undefined) entity.nENTsuspend = domain.isSuspended ? 1 : 0;
     if (domain.memo !== undefined) entity.cENTmemo = domain.memo;
     if (domain.isSupplier !== undefined) entity.nENTsupp = domain.isSupplier ? 1 : 0;
