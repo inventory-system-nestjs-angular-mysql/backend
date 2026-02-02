@@ -69,7 +69,7 @@ export class CustomerService extends BaseService {
       billToAddress2: createCustomerDto.billToAddress2 ?? null,
       billToAddress3: createCustomerDto.billToAddress3 ?? null,
       billToAddress4: createCustomerDto.billToAddress4 ?? null,
-      createDate: createCustomerDto.createDate ?? new Date(),
+      createDate: createCustomerDto.createDate,
       lastDate: createCustomerDto.lastDate ?? null,
       isSuspended: createCustomerDto.isSuspended ?? false,
       memo: createCustomerDto.memo ?? null,

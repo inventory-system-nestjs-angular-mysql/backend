@@ -115,11 +115,11 @@ export class CreateCustomerDto {
 
   @IsDateString()
   @IsOptional()
-  createDate?: Date | null;
+  createDate?: string | null;
 
   @IsDateString()
   @IsOptional()
-  lastDate?: Date | null;
+  lastDate?: string | null;
 
   @IsBoolean()
   @IsOptional()
