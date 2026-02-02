@@ -21,8 +21,11 @@ export class InvoiceService extends BaseService {
   }
 
   async findByCustomerId(customerId: string): Promise<InvoiceResponseDto[]> {
-    // Get sales invoices (JL) for the customer
-    const invoices = await this.invoiceRepository.findByEntityId(customerId, 'JL');
+    if (!customerId || !customerId.trim()) {
+      return [];
+    }
+    const trimmedCustomerId = customerId.trim();
+    const invoices = await this.invoiceRepository.findByEntityId(trimmedCustomerId, 'JL');
     return invoices.map((invoice) => this.mapToResponseDto(invoice));
   }
 
@@ -277,6 +280,138 @@ export class InvoiceService extends BaseService {
       }
 
       // For new invoice, generate an id and save
+      const id = await this.generateUniqueId(
+        (id) => this.invoiceRepository.exists(id),
+        'Unable to generate a unique primary key for Invoice',
+      );
+      invoiceData.id = id;
+      const created = await this.invoiceRepository.create(invoiceData);
+      resultInvoices.push(this.mapToResponseDto(created));
+    }
+
+    return resultInvoices;
+  }
+
+  async createBulkForCustomer(
+    customerId: string,
+    invoices: CreateInvoiceDto[],
+  ): Promise<InvoiceResponseDto[]> {
+    if (!customerId || !customerId.trim()) {
+      throw new Error('Customer ID is required');
+    }
+    const trimmedCustomerId = customerId.trim();
+    const resultInvoices: InvoiceResponseDto[] = [];
+
+    for (const invoiceDto of invoices) {
+      const invoiceValue = invoiceDto.value;
+      const invoiceData: Partial<Invoice> = {
+        refNo: invoiceDto.refNo,
+        date: invoiceDto.date instanceof Date ? invoiceDto.date : new Date(invoiceDto.date),
+        entityId: trimmedCustomerId,
+        salesmanId: invoiceDto.salesmanId ?? '..default..............',
+        warehouseId: invoiceDto.warehouseId,
+        exchangeId: invoiceDto.exchangeId ?? '..rupiah...............',
+        isCash: invoiceDto.isCash ?? false,
+        dueDate: invoiceDto.dueDate ? (invoiceDto.dueDate instanceof Date ? invoiceDto.dueDate : new Date(invoiceDto.dueDate)) : null,
+        special: 'JL', // JL = sales invoice for customer
+        remark: invoiceDto.remark ?? ' ',
+        value: invoiceValue,
+        opening: invoiceDto.opening ?? 1,
+        serie: ' ',
+        taxInvoice: ' ',
+        po: ' ',
+        remark1: ' ',
+        returnTo: '',
+        transfer: 'n/a',
+        piutang: invoiceValue,
+        tunai: 0,
+        credit: 0,
+        debit: 0,
+        isPaid: false,
+        discount: 0,
+        discount1: 0,
+        discount2: 0,
+        discount3: 0,
+        tax: 0,
+        freight: 0,
+        option: 0,
+        cetak: 0,
+        dp: 0,
+        voucher: 0,
+        jam: 0,
+        noCard: ' ',
+        jenisCard: ' ',
+        ccardNama: ' ',
+        ccardOto: ' ',
+        ccardNilai: 0,
+        kembali: 0,
+        serialNumber: null,
+        xkirim: 0,
+        kunci: 0,
+        oleh: null,
+        point: 0,
+        pax: 0,
+        dine: ' ',
+        postransfer: 0,
+        hadiah: null,
+        meja: ' ',
+        mobileId: ' ',
+        promoValue: 0,
+        promoDiscount: 0,
+        promoSales: 0,
+        sedan: ' ',
+        km: 0,
+        sedanCode: ' ',
+        pawal: 0,
+        okirim: null,
+        rate: 1.0,
+        ivdTime: null,
+        cetak1: 0,
+        clientId: ' ',
+        posId: ' ',
+        camId: ' ',
+        promog: ' ',
+        waste: 0,
+        gratis: 0,
+        sj: '',
+        tglSj: null,
+        pilih: 0,
+        value1: 0,
+        ratep: 1.0,
+        epajak: null,
+        persen: 0,
+        mobile: 0,
+        fg: 0,
+        poAmount: 0,
+        expire: 0,
+        app: 0,
+        zap: 0,
+        lain: '',
+        scan1: '',
+        scan2: '',
+        scan3: '',
+        scan4: '',
+        inv12: 1,
+        canvas: '01',
+        tambah: '',
+        fee: 0,
+        kode: '04',
+        cap: '',
+        ket: '',
+        jasa: 'A',
+        tidak: 0,
+        namapc: '',
+      };
+
+      if (invoiceDto.id && invoiceDto.id.trim() !== '') {
+        const existingInvoice = await this.invoiceRepository.findOne(invoiceDto.id.trim());
+        if (existingInvoice) {
+          const updated = await this.invoiceRepository.update(invoiceDto.id.trim(), invoiceData);
+          resultInvoices.push(this.mapToResponseDto(updated));
+          continue;
+        }
+      }
+
       const id = await this.generateUniqueId(
         (id) => this.invoiceRepository.exists(id),
         'Unable to generate a unique primary key for Invoice',

@@ -23,8 +23,8 @@ export class Customer {
   billToAddress2: string | null;
   billToAddress3: string | null;
   billToAddress4: string | null;
-  createDate: Date | null;
-  lastDate: Date | null;
+  createDate: string | null;
+  lastDate: string | null;
   isSuspended: boolean;
   memo: string | null;
   isCustomer: boolean; // nENTcust - true for customers
@@ -36,7 +36,7 @@ export class Customer {
   email3: string | null;
   zip: string | null;
   telephone: string | null;
-  birthday: Date | null;
+  birthday: string | null;
   religion: string | null;
   distance: number | null;
   freight: number | null;

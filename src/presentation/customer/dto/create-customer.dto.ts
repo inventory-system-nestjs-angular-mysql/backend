@@ -167,7 +167,7 @@ export class CreateCustomerDto {
 
   @IsDateString()
   @IsOptional()
-  birthday?: Date | null;
+  birthday?: string | null;
 
   @IsString()
   @IsOptional()

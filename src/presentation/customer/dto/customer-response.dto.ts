@@ -34,7 +34,7 @@ export class CustomerResponseDto {
   email3?: string | null;
   zip?: string | null;
   telephone?: string | null;
-  birthday?: Date | null;
+  birthday?: string | null;
   religion?: string | null;
   distance?: number | null;
   freight?: number | null;

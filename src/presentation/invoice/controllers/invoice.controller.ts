@@ -72,5 +72,14 @@ export class InvoiceController {
   ): Promise<InvoiceResponseDto[]> {
     return this.invoiceService.createBulkForSupplier(supplierId, body.invoices);
   }
+
+  @Post('customer/:customerId/bulk')
+  @HttpCode(HttpStatus.CREATED)
+  async createCustomerInvoices(
+    @Param('customerId') customerId: string,
+    @Body() body: { invoices: CreateInvoiceDto[] },
+  ): Promise<InvoiceResponseDto[]> {
+    return this.invoiceService.createBulkForCustomer(customerId, body.invoices);
+  }
 }
 
