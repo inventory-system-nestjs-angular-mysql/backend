@@ -1,0 +1,2 @@
+export const CURRENCY_REPOSITORY = Symbol('CURRENCY_REPOSITORY');
+

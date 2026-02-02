@@ -12,6 +12,9 @@ import { CityModule } from './presentation/city/city.module';
 import { SupplierModule } from './presentation/supplier/supplier.module';
 import { CustomerModule } from './presentation/customer/customer.module';
 import { SalesmanModule } from './presentation/salesman/salesman.module';
+import { InvoiceModule } from './presentation/invoice/invoice.module';
+import { CurrencyModule } from './presentation/currency/currency.module';
+import { UploadModule } from './presentation/upload/upload.module';
 
 @Module({
   imports: [
@@ -37,6 +40,9 @@ import { SalesmanModule } from './presentation/salesman/salesman.module';
     SupplierModule,
     CustomerModule,
     SalesmanModule,
+    InvoiceModule,
+    CurrencyModule,
+    UploadModule,
   ],
 })
 export class AppModule {}
