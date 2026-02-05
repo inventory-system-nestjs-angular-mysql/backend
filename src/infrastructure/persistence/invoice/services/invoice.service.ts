@@ -4,18 +4,25 @@ import {
   Inject,
 } from '@nestjs/common';
 import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
-import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
+import { IInvoiceDetailRepository } from '../../../../core/invoice/repositories/invoice-detail.repository.interface';
+import { INVOICE_REPOSITORY, INVOICE_DETAIL_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
 import { Invoice } from '../../../../core/invoice/entities/invoice.entity';
 import { InvoiceResponseDto } from '../../../../presentation/invoice/dto/invoice-response.dto';
 import { CreateInvoiceDto } from '../../../../presentation/invoice/dto/create-invoice.dto';
 import { UpdateInvoiceDto } from '../../../../presentation/invoice/dto/update-invoice.dto';
+import { CreateStockOpeningBalanceDto } from '../../../../presentation/invoice/dto/create-stock-opening-balance.dto';
 import { BaseService } from '../../../../core/services/base.service';
+
+const ENTITY_PK_OPENING = '..awal.................';
+const SALESMAN_ID_DEFAULT = '..default..............';
 
 @Injectable()
 export class InvoiceService extends BaseService {
   constructor(
     @Inject(INVOICE_REPOSITORY)
     private readonly invoiceRepository: IInvoiceRepository,
+    @Inject(INVOICE_DETAIL_REPOSITORY)
+    private readonly invoiceDetailRepository: IInvoiceDetailRepository,
   ) {
     super();
   }
@@ -152,6 +159,190 @@ export class InvoiceService extends BaseService {
     };
 
     const invoice = await this.invoiceRepository.create(invoicePartial);
+    return this.mapToResponseDto(invoice);
+  }
+
+  /**
+   * Create a Stock Opening Balance: one invoice with entityId = '..awal.................'
+   * and salesmanId = '..default..............', plus invoice detail lines for each stock.
+   */
+  async createStockOpeningBalance(
+    dto: CreateStockOpeningBalanceDto,
+  ): Promise<InvoiceResponseDto> {
+    const invoiceId = await this.generateUniqueId(
+      (id) => this.invoiceRepository.exists(id),
+      'Unable to generate a unique primary key for Invoice',
+    );
+
+    const totalValue = dto.lines.reduce((sum, line) => sum + line.amount, 0);
+    const invoiceDate = new Date(dto.date);
+
+    const invoicePartial: Partial<Invoice> = {
+      id: invoiceId,
+      refNo: dto.refNo,
+      date: invoiceDate,
+      entityId: ENTITY_PK_OPENING,
+      salesmanId: SALESMAN_ID_DEFAULT,
+      warehouseId: dto.warehouseId,
+      exchangeId: '..rupiah...............',
+      isCash: false,
+      dueDate: null,
+      special: 'BL',
+      remark: dto.remark ?? ' ',
+      value: totalValue,
+      opening: 1,
+      serie: ' ',
+      taxInvoice: ' ',
+      po: ' ',
+      remark1: ' ',
+      returnTo: '',
+      transfer: 'n/a',
+      piutang: totalValue,
+      tunai: 0,
+      credit: 0,
+      debit: 0,
+      isPaid: false,
+      discount: 0,
+      discount1: 0,
+      discount2: 0,
+      discount3: 0,
+      tax: 0,
+      freight: 0,
+      option: 0,
+      cetak: 0,
+      dp: 0,
+      voucher: 0,
+      jam: 0,
+      noCard: ' ',
+      jenisCard: ' ',
+      ccardNama: ' ',
+      ccardOto: ' ',
+      ccardNilai: 0,
+      kembali: 0,
+      serialNumber: null,
+      xkirim: 0,
+      kunci: 0,
+      oleh: null,
+      point: 0,
+      pax: 0,
+      dine: ' ',
+      postransfer: 0,
+      hadiah: null,
+      meja: ' ',
+      mobileId: ' ',
+      promoValue: 0,
+      promoDiscount: 0,
+      promoSales: 0,
+      sedan: ' ',
+      km: 0,
+      sedanCode: ' ',
+      pawal: 0,
+      okirim: null,
+      rate: 1.0,
+      ivdTime: null,
+      cetak1: 0,
+      clientId: ' ',
+      posId: ' ',
+      camId: ' ',
+      promog: ' ',
+      waste: 0,
+      gratis: 0,
+      sj: '',
+      tglSj: null,
+      pilih: 0,
+      value1: 0,
+      ratep: 1.0,
+      epajak: null,
+      persen: 0,
+      mobile: 0,
+      fg: 0,
+      poAmount: 0,
+      expire: 0,
+      app: 0,
+      zap: 0,
+      lain: '',
+      scan1: '',
+      scan2: '',
+      scan3: '',
+      scan4: '',
+      inv12: 1,
+      canvas: '01',
+      tambah: '',
+      fee: 0,
+      kode: '04',
+      cap: '',
+      ket: '',
+      jasa: 'A',
+      tidak: 0,
+      namapc: '',
+    };
+
+    const invoice = await this.invoiceRepository.create(invoicePartial);
+
+    for (let order = 0; order < dto.lines.length; order++) {
+      const line = dto.lines[order];
+      const detailId = await this.generateUniqueId(
+        (id) => this.invoiceDetailRepository.exists(id),
+        'Unable to generate a unique primary key for Invoice Detail',
+      );
+      await this.invoiceDetailRepository.create({
+        id: detailId,
+        invoiceId,
+        stockId: line.stockId ?? 'def', // default: 'def'
+        qtyIn: line.qty ?? 0,
+        qtyOut: 0,
+        zQtyIn: 0,
+        zQtyOut: 0,
+        price: line.purchasePrice ?? 0,
+        disc1: 0,
+        disc2: 0,
+        disc3: 0,
+        disc: 0,
+        accQty: 0,
+        accEnt: 0,
+        order,
+        code: line.stockCode ?? 'def', // default: 'def'
+        factor: 0,
+        unit: line.unit ?? 'def', // default: 'def'
+        amount: line.amount ?? null,
+        accQtyTransfer: 0,
+        onHand: 0,
+        adjust: 0,
+        porderId: ' ', // default: '' but using ' ' for clarity
+        cost: 0,
+        pokok: line.purchasePrice ?? 0,
+        stkppn: 0,
+        serialNumber: null,
+        xkirim: null,
+        sn: null,
+        memo: null,
+        kirim: 1,
+        id1: ' ', // default: ' '
+        id2: ' ', // default: ' '
+        id3: ' ', // default: ' '
+        batch: ' ', // default: ' '
+        expire: null,
+        ven: 0,
+        venp: 0,
+        ven1: 0,
+        venp1: 0,
+        promoCard: null,
+        inipromo: 0,
+        resep: null,
+        persen: 0,
+        tgl: null,
+        nota: null,
+        po: 0,
+        stockId1: null,
+        qtyResep: 0,
+        edit: 0,
+        disct: null,
+        pilih1: 0,
+        pilih2: 0,
+        discx: 0,
+      });
+    }
+
     return this.mapToResponseDto(invoice);
   }
 

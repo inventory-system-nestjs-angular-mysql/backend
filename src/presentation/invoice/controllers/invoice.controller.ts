@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { InvoiceService } from '../../../infrastructure/persistence/invoice/services/invoice.service';
 import { CreateInvoiceDto } from '../dto/create-invoice.dto';
+import { CreateStockOpeningBalanceDto } from '../dto/create-stock-opening-balance.dto';
 import { UpdateInvoiceDto } from '../dto/update-invoice.dto';
 import { InvoiceResponseDto } from '../dto/invoice-response.dto';
 
@@ -24,6 +25,14 @@ export class InvoiceController {
     @Body() createInvoiceDto: CreateInvoiceDto,
   ): Promise<InvoiceResponseDto> {
     return this.invoiceService.create(createInvoiceDto);
+  }
+
+  @Post('opening-balance')
+  @HttpCode(HttpStatus.CREATED)
+  async createStockOpeningBalance(
+    @Body() dto: CreateStockOpeningBalanceDto,
+  ): Promise<InvoiceResponseDto> {
+    return this.invoiceService.createStockOpeningBalance(dto);
   }
 
   @Get()
