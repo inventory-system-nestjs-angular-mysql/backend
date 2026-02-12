@@ -18,7 +18,8 @@ export class InvoiceDetail {
   accEnt: number; // nIVDaccent
   order: number; // nIVDorder
   code: string | null; // cIVDcode
-  factor: number; // cIvdFactor
+  factor: number; // nIvdFactor
+  ivdSplit: number; // nivdsplit
   unit: string | null; // cIVDunit
   amount: number | null; // nIVDAmount
   accQtyTransfer: number; // nIVDAccQtyTransfer

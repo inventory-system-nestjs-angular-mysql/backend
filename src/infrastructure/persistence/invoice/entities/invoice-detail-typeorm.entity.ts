@@ -68,8 +68,11 @@ export class InvoiceDetailTypeOrmEntity {
   @Column({ type: 'varchar', length: 20, name: 'cIVDcode', default: 'def', comment: 'Stock Code' })
   cIVDcode: string | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 4, name: 'cIvdFactor', default: 0.0 })
-  cIvdFactor: number;
+  @Column({ type: 'decimal', precision: 10, scale: 4, name: 'nIvdFactor', default: 0.0 })
+  nIvdFactor: number;
+
+  @Column({ type: 'int', name: 'nivdsplit', default: 0 })
+  nivdsplit: number;
 
   @Column({ type: 'varchar', length: 40, name: 'cIVDunit', default: 'def' })
   cIVDunit: string | null;
@@ -203,7 +206,8 @@ export class InvoiceDetailTypeOrmEntity {
     domain.accEnt = Number(this.nIVDaccent);
     domain.order = this.nIVDorder;
     domain.code = this.cIVDcode;
-    domain.factor = Number(this.cIvdFactor);
+    domain.factor = Number(this.nIvdFactor);
+    domain.ivdSplit = this.nivdsplit ?? 0;
     domain.unit = this.cIVDunit;
     domain.amount = this.nIVDAmount ? Number(this.nIVDAmount) : null;
     domain.accQtyTransfer = Number(this.nIVDAccQtyTransfer);
@@ -265,7 +269,8 @@ export class InvoiceDetailTypeOrmEntity {
     entity.nIVDaccent = domain.accEnt ?? 0;
     entity.nIVDorder = domain.order ?? 0;
     entity.cIVDcode = domain.code ?? null;
-    entity.cIvdFactor = domain.factor ?? 0;
+    entity.nIvdFactor = domain.factor ?? 0;
+    entity.nivdsplit = domain.ivdSplit ?? 0;
     entity.cIVDunit = domain.unit ?? null;
     entity.nIVDAmount = domain.amount ?? null;
     entity.nIVDAccQtyTransfer = domain.accQtyTransfer ?? 0;

@@ -27,6 +27,7 @@ export class Supplier {
   isSuspended: boolean;
   memo: string | null;
   isSupplier: boolean; // nENTsupp - true for suppliers
+  /** Relative path to the uploaded image in the backend (e.g. /uploads/images/suppliers/filename). Stored in DB; image is served from this path. */
   imagePath: string | null;
   serialNumber: string | null;
   visitFrequency: number | null;

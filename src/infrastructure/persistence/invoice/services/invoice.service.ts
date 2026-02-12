@@ -303,6 +303,7 @@ export class InvoiceService extends BaseService {
         order,
         code: line.stockCode ?? 'def', // default: 'def'
         factor: 0,
+        ivdSplit: 0,
         unit: line.unit ?? 'def', // default: 'def'
         amount: line.amount ?? null,
         accQtyTransfer: 0,
