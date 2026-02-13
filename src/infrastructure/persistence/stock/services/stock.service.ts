@@ -13,6 +13,7 @@ import { CreateStockDto } from '../../../../presentation/stock/dto/create-stock.
 import { UpdateStockDto } from '../../../../presentation/stock/dto/update-stock.dto';
 import { StockResponseDto } from '../../../../presentation/stock/dto/stock-response.dto';
 import { StockDetailResponseDto } from '../../../../presentation/stock/dto/stock-detail-response.dto';
+import { StockDetailLookupItemDto } from '../../../../presentation/stock/dto/stock-detail-lookup-item.dto';
 import { CreateStockDetailDto } from '../../../../presentation/stock/dto/create-stock-detail.dto';
 import { UpdateStockDetailDto } from '../../../../presentation/stock/dto/update-stock-detail.dto';
 import { BaseService } from '../../../../core/services/base.service';
@@ -230,32 +231,57 @@ export class StockService extends BaseService {
 
     // Update stock details if provided
     if (updateStockDto.stockDetails) {
-      // Delete existing details
-      await this.stockDetailRepository.deleteByStockId(id);
-      
-      // Create new details
-      if (updateStockDto.stockDetails.length > 0) {
-        const { generateId: generateDetailId } = await import('../../../utils/id.util');
-        const stockDetailPartials: Partial<StockDetail>[] = updateStockDto.stockDetails.map(
-          (priceRow) => {
-            const detailId = generateDetailId();
-            return {
-              id: detailId,
-              stockId: id,
-              unitId: priceRow.unit || '',
-              conversionFactor: priceRow.factor ?? null,
-              price: priceRow.wholesale ?? null,
-              retailPrice: priceRow.retail ?? null,
-              priceDollar: priceRow.priceDollar ?? null,
-              price1: priceRow.price3 ?? null,
-              price2: priceRow.price4 ?? null,
-              price3: priceRow.price5 ?? null,
-              code: priceRow.stockCode || '',
-              key: priceRow.isKey ? 1 : null,
-            };
-          },
-        );
-        await this.stockDetailRepository.createMany(stockDetailPartials);
+      const { generateId: generateDetailId } = await import('../../../utils/id.util');
+      // Fetch all existing details for this stock
+      const existingDetails = await this.stockDetailRepository.findByStockId(id);
+      const existingDetailMap = new Map(existingDetails.map(d => [d.id, d]));
+
+      // Track IDs from payload
+      const payloadIds = new Set<string>();
+
+      for (const priceRow of updateStockDto.stockDetails) {
+        let detailId = priceRow.id;
+        if (detailId && existingDetailMap.has(detailId)) {
+          // Update existing
+          payloadIds.add(detailId);
+          await this.stockDetailRepository.update(detailId, {
+            stockId: id,
+            unitId: priceRow.unit || '',
+            conversionFactor: priceRow.factor ?? null,
+            price: priceRow.wholesale ?? null,
+            retailPrice: priceRow.retail ?? null,
+            priceDollar: priceRow.priceDollar ?? null,
+            price1: priceRow.price3 ?? null,
+            price2: priceRow.price4 ?? null,
+            price3: priceRow.price5 ?? null,
+            code: priceRow.stockCode || '',
+            key: priceRow.isKey ? 1 : null,
+          });
+        } else {
+          // Create new
+          detailId = generateDetailId();
+          await this.stockDetailRepository.create({
+            id: detailId,
+            stockId: id,
+            unitId: priceRow.unit || '',
+            conversionFactor: priceRow.factor ?? null,
+            price: priceRow.wholesale ?? null,
+            retailPrice: priceRow.retail ?? null,
+            priceDollar: priceRow.priceDollar ?? null,
+            price1: priceRow.price3 ?? null,
+            price2: priceRow.price4 ?? null,
+            price3: priceRow.price5 ?? null,
+            code: priceRow.stockCode || '',
+            key: priceRow.isKey ? 1 : null,
+          });
+        }
+      }
+
+      // Delete details not present in payload
+      for (const existing of existingDetails) {
+        if (!payloadIds.has(existing.id)) {
+          await this.stockDetailRepository.delete(existing.id);
+        }
       }
     }
 
@@ -306,6 +332,27 @@ export class StockService extends BaseService {
 
     const stockDetail = await this.stockDetailRepository.create(stockDetailPartial);
     return this.mapDetailToResponseDto(stockDetail);
+  }
+
+  async findAllStockDetailsForLookup(): Promise<StockDetailLookupItemDto[]> {
+    const stockDetails = await this.stockDetailRepository.findAll();
+    const stockIds = [...new Set(stockDetails.map((d) => d.stockId))];
+    const stocks = await Promise.all(
+      stockIds.map((id) => this.stockRepository.findOne(id)),
+    );
+    const stockMap = new Map<string, Stock>();
+    stocks.forEach((s) => {
+      if (s) stockMap.set(s.id, s);
+    });
+    return stockDetails.map((detail) => ({
+      id: detail.id,
+      stockId: detail.stockId,
+      stockName: stockMap.get(detail.stockId)?.description ?? '',
+      stockCode: detail.code,
+      unit: detail.unitId,
+      unitDescription: detail.unit ?? undefined,
+      purchase: detail.price ?? 0,
+    }));
   }
 
   async findStockDetails(stockId: string): Promise<StockDetailResponseDto[]> {
@@ -420,6 +467,8 @@ export class StockService extends BaseService {
 
   private mapDetailToResponseDto(stockDetail: StockDetail): StockDetailResponseDto {
     return {
+      id: stockDetail.id,
+      stockId: stockDetail.stockId,
       stockCode: stockDetail.code,
       unit: stockDetail.unitId, // TODO: Lookup unit name from unitId
       factor: stockDetail.conversionFactor ?? 1,

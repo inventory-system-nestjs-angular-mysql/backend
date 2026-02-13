@@ -5,6 +5,8 @@ import { ICityRepository } from '../../../../core/city/repositories/city.reposit
 import { City } from '../../../../core/city/entities/city.entity';
 import { CityTypeOrmEntity } from '../entities/city-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -17,8 +19,12 @@ export class CityRepository implements ICityRepository {
   ) {}
 
   async findAll(): Promise<City[]> {
-    const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    const entities = await this.repository.find({
+      order: { cCITdesc: 'ASC' },
+    });
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((city) => city.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<City | null> {

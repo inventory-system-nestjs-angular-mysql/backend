@@ -5,6 +5,8 @@ import { ICustomerRepository } from '../../../../core/customer/repositories/cust
 import { Customer } from '../../../../core/customer/entities/customer.entity';
 import { EntityTypeOrmEntity } from '../../entity/entities/entity-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -21,8 +23,11 @@ export class CustomerRepository implements ICustomerRepository {
     // Filter by nENTcust = 1 to get only customers
     const entities = await this.repository.find({
       where: { nENTcust: 1 },
+      order: { cENTdesc: 'ASC' },
     });
-    return entities.map((entity) => this.mapToDomain(entity));
+    return entities
+      .map((entity) => this.mapToDomain(entity))
+      .filter((customer) => customer.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<Customer | null> {
@@ -102,6 +107,17 @@ export class CustomerRepository implements ICustomerRepository {
       where: { cENTdesc: description, nENTcust: 1 },
     });
     return count > 0;
+  }
+
+  async countByCityId(cityId: string): Promise<number> {
+    // Count customers where cENTfkCIT matches the cityId
+    const count = await this.repository.count({
+      where: { 
+        cENTfkCIT: cityId,
+        nENTcust: 1
+      }
+    });
+    return count;
   }
 
   /**

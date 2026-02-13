@@ -9,11 +9,12 @@ import { Type } from 'class-transformer';
 
 /**
  * DTO for a single line item in Stock Opening Balance
+ * References stock detail (stock + unit); stockId is resolved from stock detail when saving.
  */
 export class StockOpeningBalanceLineDto {
   @IsString()
   @IsNotEmpty()
-  stockId: string;
+  stockDetailId: string;
 
   @IsString()
   @IsOptional()

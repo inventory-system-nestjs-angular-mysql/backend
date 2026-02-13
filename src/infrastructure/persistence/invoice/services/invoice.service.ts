@@ -6,6 +6,8 @@ import {
 import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
 import { IInvoiceDetailRepository } from '../../../../core/invoice/repositories/invoice-detail.repository.interface';
 import { INVOICE_REPOSITORY, INVOICE_DETAIL_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
+import { IStockDetailRepository } from '../../../../core/stock/repositories/stock-detail.repository.interface';
+import { STOCK_DETAIL_REPOSITORY } from '../../../../core/stock/repositories/repository.tokens';
 import { Invoice } from '../../../../core/invoice/entities/invoice.entity';
 import { InvoiceResponseDto } from '../../../../presentation/invoice/dto/invoice-response.dto';
 import { CreateInvoiceDto } from '../../../../presentation/invoice/dto/create-invoice.dto';
@@ -23,6 +25,8 @@ export class InvoiceService extends BaseService {
     private readonly invoiceRepository: IInvoiceRepository,
     @Inject(INVOICE_DETAIL_REPOSITORY)
     private readonly invoiceDetailRepository: IInvoiceDetailRepository,
+    @Inject(STOCK_DETAIL_REPOSITORY)
+    private readonly stockDetailRepository: IStockDetailRepository,
   ) {
     super();
   }
@@ -281,6 +285,14 @@ export class InvoiceService extends BaseService {
 
     for (let order = 0; order < dto.lines.length; order++) {
       const line = dto.lines[order];
+      const stockDetail = await this.stockDetailRepository.findOne(
+        line.stockDetailId,
+      );
+      if (!stockDetail) {
+        throw new NotFoundException(
+          `Stock detail with id '${line.stockDetailId}' not found`,
+        );
+      }
       const detailId = await this.generateUniqueId(
         (id) => this.invoiceDetailRepository.exists(id),
         'Unable to generate a unique primary key for Invoice Detail',
@@ -288,7 +300,7 @@ export class InvoiceService extends BaseService {
       await this.invoiceDetailRepository.create({
         id: detailId,
         invoiceId,
-        stockId: line.stockId ?? 'def', // default: 'def'
+        stockId: stockDetail.stockId,
         qtyIn: line.qty ?? 0,
         qtyOut: 0,
         zQtyIn: 0,
@@ -301,15 +313,15 @@ export class InvoiceService extends BaseService {
         accQty: 0,
         accEnt: 0,
         order,
-        code: line.stockCode ?? 'def', // default: 'def'
-        factor: 0,
+        code: line.stockCode ?? stockDetail.code ?? 'def',
+        factor: stockDetail.conversionFactor ?? 0,
         ivdSplit: 0,
-        unit: line.unit ?? 'def', // default: 'def'
+        unit: line.unit ?? stockDetail.unitId ?? stockDetail.unit ?? 'def',
         amount: line.amount ?? null,
         accQtyTransfer: 0,
         onHand: 0,
         adjust: 0,
-        porderId: ' ', // default: '' but using ' ' for clarity
+        porderId: ' ',
         cost: 0,
         pokok: line.purchasePrice ?? 0,
         stkppn: 0,
@@ -318,10 +330,10 @@ export class InvoiceService extends BaseService {
         sn: null,
         memo: null,
         kirim: 1,
-        id1: ' ', // default: ' '
-        id2: ' ', // default: ' '
-        id3: ' ', // default: ' '
-        batch: ' ', // default: ' '
+        id1: line.stockDetailId,
+        id2: ' ',
+        id3: ' ',
+        batch: ' ',
         expire: null,
         ven: 0,
         venp: 0,

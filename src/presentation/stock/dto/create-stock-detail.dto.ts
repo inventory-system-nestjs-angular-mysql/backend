@@ -13,6 +13,11 @@ import { Type } from 'class-transformer';
  * Maps from frontend StockPriceRow structure
  */
 export class CreateStockDetailDto {
+
+  @IsString()
+  @MaxLength(24)
+  stockId?: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(20)
@@ -20,7 +25,7 @@ export class CreateStockDetailDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(20)
+  @MaxLength(30)
   unit: string;
 
   @IsNumber()

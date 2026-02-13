@@ -5,6 +5,8 @@ import { ISupplierRepository } from '../../../../core/supplier/repositories/supp
 import { Supplier } from '../../../../core/supplier/entities/supplier.entity';
 import { EntityTypeOrmEntity } from '../../entity/entities/entity-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -21,8 +23,11 @@ export class SupplierRepository implements ISupplierRepository {
     // Filter by nENTsupp = 1 to get only suppliers
     const entities = await this.repository.find({
       where: { nENTsupp: 1 },
+      order: { cENTdesc: 'ASC' },
     });
-    return entities.map((entity) => this.mapToDomain(entity));
+    return entities
+      .map((entity) => this.mapToDomain(entity))
+      .filter((supplier) => supplier.id !== DEFAULT_PK);
   } 
 
   async findOne(id: string): Promise<Supplier | null> {
@@ -103,7 +108,17 @@ export class SupplierRepository implements ISupplierRepository {
     });
     return count > 0;
   }
-
+  
+  async countByCityId(cityId: string): Promise<number> {
+    // Count suppliers where cENTfkCIT matches the cityId
+    const count = await this.repository.count({
+      where: { 
+        cENTfkCIT: cityId,
+        nENTsupp: 1
+      }
+    });
+    return count;
+  }
   /**
    * Maps TypeORM entity to Supplier domain entity
    */

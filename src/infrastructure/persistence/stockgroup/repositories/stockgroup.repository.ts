@@ -5,6 +5,8 @@ import { IStockGroupRepository } from '../../../../core/stockgroup/repositories/
 import { StockGroup } from '../../../../core/stockgroup/entities/stockgroup.entity';
 import { StockGroupTypeOrmEntity } from '../entities/stockgroup-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -17,8 +19,12 @@ export class StockGroupRepository implements IStockGroupRepository {
   ) {}
 
   async findAll(): Promise<StockGroup[]> {
-    const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    const entities = await this.repository.find({
+      order: { cGRPdesc: 'ASC' },
+    });
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((group) => group.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<StockGroup | null> {

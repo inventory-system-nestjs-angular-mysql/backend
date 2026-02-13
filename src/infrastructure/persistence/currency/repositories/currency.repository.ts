@@ -5,6 +5,8 @@ import { ICurrencyRepository } from '../../../../core/currency/repositories/curr
 import { Currency } from '../../../../core/currency/entities/currency.entity';
 import { CurrencyTypeOrmEntity } from '../entities/currency-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -20,7 +22,9 @@ export class CurrencyRepository implements ICurrencyRepository {
     const entities = await this.repository.find({
       order: { cEXCdesc: 'ASC' },
     });
-    return entities.map((entity) => entity.toDomain());
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((currency) => currency.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<Currency | null> {

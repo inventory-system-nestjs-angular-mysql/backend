@@ -5,6 +5,8 @@ import { IBrandRepository } from '../../../../core/brand/repositories/brand.repo
 import { Brand } from '../../../../core/brand/entities/brand.entity';
 import { BrandTypeOrmEntity } from '../entities/brand-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -17,8 +19,12 @@ export class BrandRepository implements IBrandRepository {
   ) {}
 
   async findAll(): Promise<Brand[]> {
-    const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    const entities = await this.repository.find({
+      order: { cBRDdesc: 'ASC' },
+    });
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((brand) => brand.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<Brand | null> {

@@ -5,6 +5,8 @@ import { IBankRepository } from '../../../../core/bank/repositories/bank.reposit
 import { Bank } from '../../../../core/bank/entities/bank.entity';
 import { BankTypeOrmEntity } from '../entities/bank-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -17,8 +19,12 @@ export class BankRepository implements IBankRepository {
   ) {}
 
   async findAll(): Promise<Bank[]> {
-    const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    const entities = await this.repository.find({
+      order: { cBANdesc: 'ASC' },
+    });
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((bank) => bank.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<Bank | null> {

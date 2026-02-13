@@ -5,6 +5,8 @@ import { ISalesmanRepository } from '../../../../core/salesman/repositories/sale
 import { Salesman } from '../../../../core/salesman/entities/salesman.entity';
 import { SalesmanTypeOrmEntity } from '../entities/salesman-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -17,8 +19,12 @@ export class SalesmanRepository implements ISalesmanRepository {
   ) {}
 
   async findAll(): Promise<Salesman[]> {
-    const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    const entities = await this.repository.find({
+      order: { cSAMdesc: 'ASC' },
+    });
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((salesman) => salesman.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<Salesman | null> {

@@ -16,6 +16,7 @@ import { StockResponseDto } from '../dto/stock-response.dto';
 import { CreateStockDetailDto } from '../dto/create-stock-detail.dto';
 import { UpdateStockDetailDto } from '../dto/update-stock-detail.dto';
 import { StockDetailResponseDto } from '../dto/stock-detail-response.dto';
+import { StockDetailLookupItemDto } from '../dto/stock-detail-lookup-item.dto';
 
 @Controller('stocks')
 export class StockController {
@@ -32,6 +33,11 @@ export class StockController {
   @Get()
   async findAll(): Promise<StockResponseDto[]> {
     return this.stockService.findAll();
+  }
+
+  @Get('all-details')
+  async findAllStockDetailsForLookup(): Promise<StockDetailLookupItemDto[]> {
+    return this.stockService.findAllStockDetailsForLookup();
   }
 
   @Get(':id')

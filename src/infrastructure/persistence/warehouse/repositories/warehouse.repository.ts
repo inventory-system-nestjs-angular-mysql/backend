@@ -5,6 +5,8 @@ import { IWarehouseRepository } from '../../../../core/warehouse/repositories/wa
 import { Warehouse } from '../../../../core/warehouse/entities/warehouse.entity';
 import { WarehouseTypeOrmEntity } from '../entities/warehouse-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -17,8 +19,12 @@ export class WarehouseRepository implements IWarehouseRepository {
   ) {}
 
   async findAll(): Promise<Warehouse[]> {
-    const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    const entities = await this.repository.find({
+      order: { cWHSdesc: 'ASC' },
+    });
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((warehouse) => warehouse.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<Warehouse | null> {

@@ -3,6 +3,8 @@
  * Matches frontend StockPriceRow structure
  */
 export class StockDetailResponseDto {
+  id?: string;
+  stockId?: string;
   stockCode: string;
   unit: string;
   factor: number;

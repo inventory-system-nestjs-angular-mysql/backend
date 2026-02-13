@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import { ICityRepository } from '../../../../core/city/repositories/city.repository.interface';
 import { CITY_REPOSITORY } from '../../../../core/city/repositories/repository.tokens';
@@ -11,12 +12,18 @@ import { CreateCityDto } from '../../../../presentation/city/dto/create-city.dto
 import { UpdateCityDto } from '../../../../presentation/city/dto/update-city.dto';
 import { CityResponseDto } from '../../../../presentation/city/dto/city-response.dto';
 import { BaseService } from '../../../../core/services/base.service';
+import { CUSTOMER_REPOSITORY, ICustomerRepository } from 'src/core/customer';
+import { ISupplierRepository, SUPPLIER_REPOSITORY } from 'src/core/supplier';
 
 @Injectable()
 export class CityService extends BaseService {
   constructor(
     @Inject(CITY_REPOSITORY)
     private readonly cityRepository: ICityRepository,
+    @Inject(CUSTOMER_REPOSITORY)
+    private readonly customerRepository: ICustomerRepository,
+    @Inject(SUPPLIER_REPOSITORY)
+    private readonly supplierRepository: ISupplierRepository,
   ) {
     super();
   }
@@ -124,6 +131,23 @@ export class CityService extends BaseService {
         `City with id '${id}' not found`,
       );
     }
+
+    // // Check if any Customer records reference this City
+    // const customerRepo = this.customerRepository ?? (await import('../../customer/repositories/customer.repository')).CustomerRepository;
+    // const supplierRepo = this.supplierRepository ?? (await import('../../supplier/repositories/supplier.repository')).SupplierRepository;
+
+    // // Count customers referencing this city
+    // const customerCount = await customerRepo.countByCityId ? await customerRepo.countByCityId(id) : await customerRepo.repository.count({ where: { cENTfkCIT: id, nENTcust: 1 } });
+    // // Count suppliers referencing this city
+    // const supplierCount = await supplierRepo.countByCityId ? await supplierRepo.countByCityId(id) : await supplierRepo.repository.count({ where: { cENTfkCIT: id, nENTsupp: 1 } });
+    const customerCount = await this.customerRepository.countByCityId(id);
+    const supplierCount = await this.supplierRepository.countByCityId(id);
+    if (customerCount > 0 || supplierCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete City because it is referenced by ${customerCount} customer(s) and ${supplierCount} supplier(s). Please remove or reassign those records first.`
+      );
+    }
+
     await this.cityRepository.delete(id);
   }
 

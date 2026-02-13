@@ -5,6 +5,8 @@ import { IUnitRepository } from '../../../../core/unit/repositories/unit.reposit
 import { Unit } from '../../../../core/unit/entities/unit.entity';
 import { UnitTypeOrmEntity } from '../entities/unit-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -17,8 +19,12 @@ export class UnitRepository implements IUnitRepository {
   ) {}
 
   async findAll(): Promise<Unit[]> {
-    const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    const entities = await this.repository.find({
+      order: { cUNIdesc: 'ASC' },
+    });
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((unit) => unit.id !== DEFAULT_PK);
   }
 
   async findOne(id: string): Promise<Unit | null> {

@@ -5,6 +5,8 @@ import { IStockDetailRepository } from '../../../../core/stock/repositories/stoc
 import { StockDetail } from '../../../../core/stock/entities/stock-detail.entity';
 import { StockDetailTypeOrmEntity } from '../entities/stock-detail-typeorm.entity';
 
+const DEFAULT_PK = '..default..............';
+
 /**
  * Infrastructure Layer - Repository Implementation
  * Implements the domain repository interface using TypeORM
@@ -18,7 +20,9 @@ export class StockDetailRepository implements IStockDetailRepository {
 
   async findAll(): Promise<StockDetail[]> {
     const entities = await this.repository.find();
-    return entities.map((entity) => entity.toDomain());
+    return entities
+      .map((entity) => entity.toDomain())
+      .filter((detail) => detail.id !== DEFAULT_PK);
   }
 
   async findByStockId(stockId: string): Promise<StockDetail[]> {

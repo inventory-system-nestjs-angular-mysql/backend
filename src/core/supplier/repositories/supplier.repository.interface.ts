@@ -14,5 +14,6 @@ export interface ISupplierRepository {
   exists(id: string): Promise<boolean>;
   existsByCode(code: string): Promise<boolean>;
   existsByDescription(description: string): Promise<boolean>;
+  countByCityId(cityId: string): Promise<number>;
 }
 
