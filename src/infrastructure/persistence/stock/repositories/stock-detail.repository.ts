@@ -19,7 +19,9 @@ export class StockDetailRepository implements IStockDetailRepository {
   ) {}
 
   async findAll(): Promise<StockDetail[]> {
-    const entities = await this.repository.find();
+    const entities = await this.repository.find({
+      order: { cSTDcode: 'ASC' },
+    });
     return entities
       .map((entity) => entity.toDomain())
       .filter((detail) => detail.id !== DEFAULT_PK);
