@@ -16,6 +16,7 @@ export class CreateStockDetailDto {
 
   @IsString()
   @MaxLength(24)
+  @IsOptional()
   stockId?: string;
 
   @IsString()

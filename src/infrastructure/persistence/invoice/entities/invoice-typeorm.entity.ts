@@ -439,7 +439,7 @@ export class InvoiceTypeOrmEntity {
   static fromDomain(domain: Partial<Invoice>): InvoiceTypeOrmEntity {
     const entity = new InvoiceTypeOrmEntity();
     if (domain.id) entity.cINVpk = domain.id;
-    entity.cINVrefno = domain.refNo ?? null;
+    if (domain.refNo !== undefined) entity.cINVrefno = domain.refNo ?? null;
     entity.dINVdate = domain.date ?? null;
     entity.cINVfkENT = domain.entityId ?? null;
     // Use default values from database schema if null/undefined

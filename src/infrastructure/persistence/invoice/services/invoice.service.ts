@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  ConflictException,
   Inject,
 } from '@nestjs/common';
 import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
@@ -13,6 +14,7 @@ import { InvoiceResponseDto } from '../../../../presentation/invoice/dto/invoice
 import { CreateInvoiceDto } from '../../../../presentation/invoice/dto/create-invoice.dto';
 import { UpdateInvoiceDto } from '../../../../presentation/invoice/dto/update-invoice.dto';
 import { CreateStockOpeningBalanceDto } from '../../../../presentation/invoice/dto/create-stock-opening-balance.dto';
+import { OpeningBalanceDetailDto } from '../../../../presentation/invoice/dto/opening-balance-detail.dto';
 import { BaseService } from '../../../../core/services/base.service';
 
 const ENTITY_PK_OPENING = '..awal.................';
@@ -52,6 +54,7 @@ export class InvoiceService extends BaseService {
   }
 
   async create(createInvoiceDto: CreateInvoiceDto): Promise<InvoiceResponseDto> {
+
     const id = await this.generateUniqueId(
       (id) => this.invoiceRepository.exists(id),
       'Unable to generate a unique primary key for Invoice',
@@ -626,6 +629,225 @@ export class InvoiceService extends BaseService {
     }
 
     return resultInvoices;
+  }
+
+  async findOpeningBalances(): Promise<InvoiceResponseDto[]> {
+    const invoices = await this.invoiceRepository.findByEntityId(ENTITY_PK_OPENING, 'BL');
+    return invoices.map((invoice) => this.mapToResponseDto(invoice));
+  }
+
+  async findOpeningBalanceDetail(id: string): Promise<OpeningBalanceDetailDto> {
+    const invoice = await this.invoiceRepository.findOne(id);
+    if (!invoice) {
+      throw new NotFoundException(`Opening balance invoice with id '${id}' not found`);
+    }
+    const lines = await this.invoiceDetailRepository.findByInvoiceId(id);
+    return {
+      id: invoice.id,
+      refNo: invoice.refNo,
+      date: invoice.date,
+      warehouseId: invoice.warehouseId,
+      remark: invoice.remark ?? null,
+      amount: invoice.value,
+      lines: lines.map((line) => ({
+        stockDetailId: line.id1 ?? '',
+        stockCode: line.code ?? '',
+        unit: line.unit ?? '',
+        qty: line.qtyIn,
+        purchasePrice: line.pokok,
+        amount: line.amount ?? 0,
+      })),
+    };
+  }
+
+  async updateOpeningBalance(
+    id: string,
+    dto: CreateStockOpeningBalanceDto,
+  ): Promise<InvoiceResponseDto> {
+    const exists = await this.invoiceRepository.exists(id);
+    if (!exists) {
+      throw new NotFoundException(`Opening balance invoice with id '${id}' not found`);
+    }
+
+    const totalValue = dto.lines.reduce((sum, line) => sum + line.amount, 0);
+    const invoiceDate = new Date(dto.date);
+
+    // Reuse the same field assignments as createStockOpeningBalance (refNo is intentionally excluded — invoice no. is immutable after creation)
+    const invoicePartial: Partial<Invoice> = {
+      date: invoiceDate,
+      entityId: ENTITY_PK_OPENING,
+      salesmanId: SALESMAN_ID_DEFAULT,
+      warehouseId: dto.warehouseId,
+      exchangeId: '..rupiah...............',
+      isCash: false,
+      dueDate: null,
+      special: 'BL',
+      remark: dto.remark ?? ' ',
+      value: totalValue,
+      opening: 1,
+      serie: ' ',
+      taxInvoice: ' ',
+      po: ' ',
+      remark1: ' ',
+      returnTo: '',
+      transfer: 'n/a',
+      piutang: totalValue,
+      tunai: 0,
+      credit: 0,
+      debit: 0,
+      isPaid: false,
+      discount: 0,
+      discount1: 0,
+      discount2: 0,
+      discount3: 0,
+      tax: 0,
+      freight: 0,
+      option: 0,
+      cetak: 0,
+      dp: 0,
+      voucher: 0,
+      jam: 0,
+      noCard: ' ',
+      jenisCard: ' ',
+      ccardNama: ' ',
+      ccardOto: ' ',
+      ccardNilai: 0,
+      kembali: 0,
+      serialNumber: null,
+      xkirim: 0,
+      kunci: 0,
+      oleh: null,
+      point: 0,
+      pax: 0,
+      dine: ' ',
+      postransfer: 0,
+      hadiah: null,
+      meja: ' ',
+      mobileId: ' ',
+      promoValue: 0,
+      promoDiscount: 0,
+      promoSales: 0,
+      sedan: ' ',
+      km: 0,
+      sedanCode: ' ',
+      pawal: 0,
+      okirim: null,
+      rate: 1.0,
+      ivdTime: null,
+      cetak1: 0,
+      clientId: ' ',
+      posId: ' ',
+      camId: ' ',
+      promog: ' ',
+      waste: 0,
+      gratis: 0,
+      sj: '',
+      tglSj: null,
+      pilih: 0,
+      value1: 0,
+      ratep: 1.0,
+      epajak: null,
+      persen: 0,
+      mobile: 0,
+      fg: 0,
+      poAmount: 0,
+      expire: 0,
+      app: 0,
+      zap: 0,
+      lain: '',
+      scan1: '',
+      scan2: '',
+      scan3: '',
+      scan4: '',
+      inv12: 1,
+      canvas: '01',
+      tambah: '',
+      fee: 0,
+      kode: '04',
+      cap: '',
+      ket: '',
+      jasa: 'A',
+      tidak: 0,
+      namapc: '',
+    };
+
+    await this.invoiceRepository.update(id, invoicePartial);
+
+    await this.invoiceDetailRepository.deleteByInvoiceId(id);
+
+    for (let order = 0; order < dto.lines.length; order++) {
+      const line = dto.lines[order];
+      const stockDetail = await this.stockDetailRepository.findOne(line.stockDetailId);
+      if (!stockDetail) {
+        throw new NotFoundException(
+          `Stock detail with id '${line.stockDetailId}' not found`,
+        );
+      }
+      const detailId = await this.generateUniqueId(
+        (detId) => this.invoiceDetailRepository.exists(detId),
+        'Unable to generate a unique primary key for Invoice Detail',
+      );
+      await this.invoiceDetailRepository.create({
+        id: detailId,
+        invoiceId: id,
+        stockId: stockDetail.stockId,
+        qtyIn: line.qty ?? 0,
+        qtyOut: 0,
+        zQtyIn: 0,
+        zQtyOut: 0,
+        price: line.purchasePrice ?? 0,
+        disc1: 0,
+        disc2: 0,
+        disc3: 0,
+        disc: 0,
+        accQty: 0,
+        accEnt: 0,
+        order,
+        code: line.stockCode ?? stockDetail.code ?? 'def',
+        factor: stockDetail.conversionFactor ?? 0,
+        ivdSplit: 0,
+        unit: line.unit ?? stockDetail.unitId ?? stockDetail.unit ?? 'def',
+        amount: line.amount ?? null,
+        accQtyTransfer: 0,
+        onHand: 0,
+        adjust: 0,
+        porderId: ' ',
+        cost: 0,
+        pokok: line.purchasePrice ?? 0,
+        stkppn: 0,
+        serialNumber: null,
+        xkirim: null,
+        sn: null,
+        memo: null,
+        kirim: 1,
+        id1: line.stockDetailId,
+        id2: ' ',
+        id3: ' ',
+        batch: ' ',
+        expire: null,
+        ven: 0,
+        venp: 0,
+        ven1: 0,
+        venp1: 0,
+        promoCard: null,
+        inipromo: 0,
+        resep: null,
+        persen: 0,
+        tgl: null,
+        nota: null,
+        po: 0,
+        stockId1: null,
+        qtyResep: 0,
+        edit: 0,
+        disct: null,
+        pilih1: 0,
+        pilih2: 0,
+        discx: 0,
+      });
+    }
+
+    const updated = await this.invoiceRepository.findOne(id);
+    return this.mapToResponseDto(updated!);
   }
 
   async findAll(): Promise<InvoiceResponseDto[]> {

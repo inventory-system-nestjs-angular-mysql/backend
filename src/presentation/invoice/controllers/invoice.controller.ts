@@ -12,6 +12,7 @@ import {
 import { InvoiceService } from '../../../infrastructure/persistence/invoice/services/invoice.service';
 import { CreateInvoiceDto } from '../dto/create-invoice.dto';
 import { CreateStockOpeningBalanceDto } from '../dto/create-stock-opening-balance.dto';
+import { OpeningBalanceDetailDto } from '../dto/opening-balance-detail.dto';
 import { UpdateInvoiceDto } from '../dto/update-invoice.dto';
 import { InvoiceResponseDto } from '../dto/invoice-response.dto';
 
@@ -52,6 +53,26 @@ export class InvoiceController {
     @Param('supplierId') supplierId: string,
   ): Promise<InvoiceResponseDto[]> {
     return this.invoiceService.findBySupplierId(supplierId);
+  }
+
+  @Get('opening-balance')
+  async findOpeningBalances(): Promise<InvoiceResponseDto[]> {
+    return this.invoiceService.findOpeningBalances();
+  }
+
+  @Get('opening-balance/:id')
+  async findOpeningBalanceDetail(
+    @Param('id') id: string,
+  ): Promise<OpeningBalanceDetailDto> {
+    return this.invoiceService.findOpeningBalanceDetail(id);
+  }
+
+  @Patch('opening-balance/:id')
+  async updateOpeningBalance(
+    @Param('id') id: string,
+    @Body() dto: CreateStockOpeningBalanceDto,
+  ): Promise<InvoiceResponseDto> {
+    return this.invoiceService.updateOpeningBalance(id, dto);
   }
 
   @Get(':id')

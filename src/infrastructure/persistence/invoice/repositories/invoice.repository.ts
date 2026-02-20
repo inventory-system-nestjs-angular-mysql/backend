@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
@@ -14,7 +14,7 @@ export class InvoiceRepository implements IInvoiceRepository {
   constructor(
     @InjectRepository(InvoiceTypeOrmEntity)
     private readonly repository: Repository<InvoiceTypeOrmEntity>,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Invoice[]> {
     const entities = await this.repository.find({
@@ -35,15 +35,15 @@ export class InvoiceRepository implements IInvoiceRepository {
     if (!entityId || !entityId.trim()) {
       return [];
     }
-    
+
     const trimmedEntityId = entityId.trim();
     const where: any = { cINVfkENT: trimmedEntityId };
-    
+
     // Filter by special type if provided
     if (special) {
       where.cINVspecial = special;
     }
-    
+
     const entities = await this.repository.find({
       where,
       order: { dINVdate: 'DESC' },
@@ -60,6 +60,11 @@ export class InvoiceRepository implements IInvoiceRepository {
 
   async create(invoice: Partial<Invoice>): Promise<Invoice> {
     const entity = InvoiceTypeOrmEntity.fromDomain(invoice);
+    const existingInvoice = await this.findByRefNo(invoice.refNo);
+    if (existingInvoice) {
+      throw new ConflictException(`Invoice with number '${invoice.refNo}' already exists`);
+    }
+
     const saved = await this.repository.save(entity);
     return saved.toDomain();
   }
@@ -72,7 +77,7 @@ export class InvoiceRepository implements IInvoiceRepository {
         updateFields[key] = entity[key];
       }
     });
-    
+
     await this.repository.update({ cINVpk: id }, updateFields);
     const updated = await this.findOne(id);
     if (!updated) {
