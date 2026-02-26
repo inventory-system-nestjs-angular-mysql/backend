@@ -18,6 +18,7 @@ export class OpeningBalanceDetailDto {
   refNo: string;
   date: Date | string;
   warehouseId: string;
+  currencyId: string;
   remark?: string | null;
   amount: number;
   lines: OpeningBalanceLineResponseDto[];

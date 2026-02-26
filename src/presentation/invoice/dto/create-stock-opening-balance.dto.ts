@@ -27,6 +27,10 @@ export class CreateStockOpeningBalanceDto {
   warehouseId: string;
 
   @IsString()
+  @IsNotEmpty()
+  currencyId: string;
+
+  @IsString()
   @IsOptional()
   remark?: string | null;
 
