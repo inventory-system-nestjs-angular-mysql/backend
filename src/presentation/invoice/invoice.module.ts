@@ -8,6 +8,9 @@ import { InvoiceTypeOrmEntity } from '../../infrastructure/persistence/invoice/e
 import { InvoiceDetailTypeOrmEntity } from '../../infrastructure/persistence/invoice/entities/invoice-detail-typeorm.entity';
 import { StockDetailTypeOrmEntity } from '../../infrastructure/persistence/stock/entities/stock-detail-typeorm.entity';
 import { StockDetailRepository } from '../../infrastructure/persistence/stock/repositories/stock-detail.repository';
+import { EntityTypeOrmEntity } from '../../infrastructure/persistence/entity/entities/entity-typeorm.entity';
+import { UnitTypeOrmEntity } from '../../infrastructure/persistence/unit/entities/unit-typeorm.entity';
+import { CurrencyTypeOrmEntity } from '../../infrastructure/persistence/currency/entities/currency-typeorm.entity';
 import { INVOICE_REPOSITORY, INVOICE_DETAIL_REPOSITORY } from '../../core/invoice/repositories/repository.tokens';
 import { STOCK_DETAIL_REPOSITORY } from '../../core/stock/repositories/repository.tokens';
 
@@ -17,6 +20,9 @@ import { STOCK_DETAIL_REPOSITORY } from '../../core/stock/repositories/repositor
       InvoiceTypeOrmEntity,
       InvoiceDetailTypeOrmEntity,
       StockDetailTypeOrmEntity,
+      EntityTypeOrmEntity,
+      UnitTypeOrmEntity,
+      CurrencyTypeOrmEntity,
     ]),
   ],
   controllers: [InvoiceController],

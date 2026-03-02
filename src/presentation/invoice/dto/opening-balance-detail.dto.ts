@@ -8,6 +8,7 @@ export class OpeningBalanceLineResponseDto {
   qty: number;           // qtyIn
   purchasePrice: number; // pokok (purchase price at time of entry)
   amount: number;        // line amount
+  onHand: number;        // nIVDonHand — previous stock before this entry
 }
 
 /**

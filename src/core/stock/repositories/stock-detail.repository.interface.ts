@@ -13,5 +13,6 @@ export interface IStockDetailRepository {
   delete(id: string): Promise<void>;
   deleteByStockId(stockId: string): Promise<void>;
   exists(id: string): Promise<boolean>;
+  countByUnitId(unitId: string): Promise<number>;
 }
 

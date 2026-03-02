@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { IUnitRepository } from '../../../../core/unit/repositories/unit.repository.interface';
 import { UNIT_REPOSITORY } from '../../../../core/unit/repositories/repository.tokens';
+import { IStockDetailRepository } from '../../../../core/stock/repositories/stock-detail.repository.interface';
+import { STOCK_DETAIL_REPOSITORY } from '../../../../core/stock/repositories/repository.tokens';
 import { Unit } from '../../../../core/unit/entities/unit.entity';
 import { CreateUnitDto } from '../../../../presentation/unit/dto/create-unit.dto';
 import { UpdateUnitDto } from '../../../../presentation/unit/dto/update-unit.dto';
@@ -17,6 +20,8 @@ export class UnitService extends BaseService {
   constructor(
     @Inject(UNIT_REPOSITORY)
     private readonly unitRepository: IUnitRepository,
+    @Inject(STOCK_DETAIL_REPOSITORY)
+    private readonly stockDetailRepository: IStockDetailRepository,
   ) {
     super();
   }
@@ -126,6 +131,14 @@ export class UnitService extends BaseService {
         `Unit with id '${id}' not found`,
       );
     }
+
+    const stockDetailCount = await this.stockDetailRepository.countByUnitId(id);
+    if (stockDetailCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Unit because it is referenced by ${stockDetailCount} stock detail(s). Please remove or reassign those stock details first.`,
+      );
+    }
+
     await this.unitRepository.delete(id);
   }
 

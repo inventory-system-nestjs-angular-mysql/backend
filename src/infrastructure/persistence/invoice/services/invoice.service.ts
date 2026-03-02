@@ -4,11 +4,16 @@ import {
   ConflictException,
   Inject,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
 import { IInvoiceDetailRepository } from '../../../../core/invoice/repositories/invoice-detail.repository.interface';
 import { INVOICE_REPOSITORY, INVOICE_DETAIL_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
 import { IStockDetailRepository } from '../../../../core/stock/repositories/stock-detail.repository.interface';
 import { STOCK_DETAIL_REPOSITORY } from '../../../../core/stock/repositories/repository.tokens';
+import { EntityTypeOrmEntity } from '../../entity/entities/entity-typeorm.entity';
+import { UnitTypeOrmEntity } from '../../unit/entities/unit-typeorm.entity';
+import { CurrencyTypeOrmEntity } from '../../currency/entities/currency-typeorm.entity';
 import { Invoice } from '../../../../core/invoice/entities/invoice.entity';
 import { InvoiceResponseDto } from '../../../../presentation/invoice/dto/invoice-response.dto';
 import { CreateInvoiceDto } from '../../../../presentation/invoice/dto/create-invoice.dto';
@@ -29,6 +34,12 @@ export class InvoiceService extends BaseService {
     private readonly invoiceDetailRepository: IInvoiceDetailRepository,
     @Inject(STOCK_DETAIL_REPOSITORY)
     private readonly stockDetailRepository: IStockDetailRepository,
+    @InjectRepository(EntityTypeOrmEntity)
+    private readonly entityRepository: Repository<EntityTypeOrmEntity>,
+    @InjectRepository(UnitTypeOrmEntity)
+    private readonly unitRepository: Repository<UnitTypeOrmEntity>,
+    @InjectRepository(CurrencyTypeOrmEntity)
+    private readonly currencyRepository: Repository<CurrencyTypeOrmEntity>,
   ) {
     super();
   }
@@ -38,7 +49,7 @@ export class InvoiceService extends BaseService {
       return [];
     }
     const trimmedCustomerId = customerId.trim();
-    const invoices = await this.invoiceRepository.findByEntityId(trimmedCustomerId, 'JL');
+    const invoices = await this.invoiceRepository.findByEntityId(trimmedCustomerId, 'SA');
     return invoices.map((invoice) => this.mapToResponseDto(invoice));
   }
 
@@ -49,7 +60,7 @@ export class InvoiceService extends BaseService {
       return [];
     }
     const trimmedSupplierId = supplierId.trim();
-    const invoices = await this.invoiceRepository.findByEntityId(trimmedSupplierId, 'BL');
+    const invoices = await this.invoiceRepository.findByEntityId(trimmedSupplierId, 'SA');
     return invoices.map((invoice) => this.mapToResponseDto(invoice));
   }
 
@@ -184,27 +195,40 @@ export class InvoiceService extends BaseService {
     const totalValue = dto.lines.reduce((sum, line) => sum + line.amount, 0);
     const invoiceDate = new Date(dto.date);
 
+    const now = new Date();
+    const olehTimestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    const openingEntity = await this.entityRepository.findOne({ where: { cENTpk: ENTITY_PK_OPENING } });
+    const openingEntityCode = openingEntity?.cENTcode ?? null;
+
+    const currencyRecord = await this.currencyRepository.findOne({ where: { cEXCpk: dto.currencyId } });
+    const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
+
     const invoicePartial: Partial<Invoice> = {
       id: invoiceId,
       refNo: dto.refNo,
       date: invoiceDate,
       entityId: ENTITY_PK_OPENING,
+      entityCode: openingEntityCode,
       salesmanId: SALESMAN_ID_DEFAULT,
       warehouseId: dto.warehouseId,
       exchangeId: dto.currencyId,
       isCash: false,
-      dueDate: null,
-      special: 'BL',
+      dueDate: invoiceDate,
+      taxDate: invoiceDate,
+      special: 'SA',
       remark: dto.remark ?? ' ',
-      value: totalValue,
-      opening: 1,
+      value: 0,
+      opening: 0,
+      rate: currencyRate,
+      oleh: olehTimestamp,
       serie: ' ',
       taxInvoice: ' ',
       po: ' ',
       remark1: ' ',
       returnTo: '',
       transfer: 'n/a',
-      piutang: totalValue,
+      piutang: 0,
       tunai: 0,
       credit: 0,
       debit: 0,
@@ -229,7 +253,6 @@ export class InvoiceService extends BaseService {
       serialNumber: null,
       xkirim: 0,
       kunci: 0,
-      oleh: null,
       point: 0,
       pax: 0,
       dine: ' ',
@@ -245,7 +268,6 @@ export class InvoiceService extends BaseService {
       sedanCode: ' ',
       pawal: 0,
       okirim: null,
-      rate: 1.0,
       ivdTime: null,
       cetak1: 0,
       clientId: ' ',
@@ -300,13 +322,21 @@ export class InvoiceService extends BaseService {
         (id) => this.invoiceDetailRepository.exists(id),
         'Unable to generate a unique primary key for Invoice Detail',
       );
+      const unitRecord = stockDetail.unitId
+        ? await this.unitRepository.findOne({ where: { cUNIpk: stockDetail.unitId } })
+        : null;
+      const unitName = unitRecord?.cUNIdesc ?? stockDetail.unit ?? 'def';
+      const qty = line.qty ?? 0;
+      const factor = stockDetail.conversionFactor ?? 0;
+      const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId);
+
       await this.invoiceDetailRepository.create({
         id: detailId,
         invoiceId,
         stockId: stockDetail.stockId,
-        qtyIn: line.qty ?? 0,
+        qtyIn: qty,
         qtyOut: 0,
-        zQtyIn: 0,
+        zQtyIn: qty * factor,
         zQtyOut: 0,
         price: line.purchasePrice ?? 0,
         disc1: 0,
@@ -317,17 +347,17 @@ export class InvoiceService extends BaseService {
         accEnt: 0,
         order,
         code: line.stockCode ?? stockDetail.code ?? 'def',
-        factor: stockDetail.conversionFactor ?? 0,
+        factor,
         ivdSplit: 0,
-        unit: line.unit ?? stockDetail.unitId ?? stockDetail.unit ?? 'def',
+        unit: unitName,
         amount: line.amount ?? null,
         accQtyTransfer: 0,
-        onHand: 0,
+        onHand,
         adjust: 0,
         porderId: ' ',
         cost: 0,
-        pokok: line.purchasePrice ?? 0,
-        stkppn: 0,
+        pokok: 0,
+        stkppn: 1,
         serialNumber: null,
         xkirim: null,
         sn: null,
@@ -377,27 +407,38 @@ export class InvoiceService extends BaseService {
 
     for (const invoiceDto of invoices) {
       const invoiceValue = invoiceDto.value;
-      // Build the full invoice object with all defaults
+      const invoiceDate = invoiceDto.date instanceof Date ? invoiceDto.date : new Date(invoiceDto.date);
+      const now = new Date();
+      const olehTimestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+      const exchangeId = invoiceDto.exchangeId ?? '..rupiah...............';
+      const currencyRecord = await this.currencyRepository.findOne({ where: { cEXCpk: exchangeId } });
+      const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
+
       const invoiceData: Partial<Invoice> = {
         refNo: invoiceDto.refNo,
-        date: invoiceDto.date instanceof Date ? invoiceDto.date : new Date(invoiceDto.date),
+        date: invoiceDate,
         entityId: trimmedSupplierId,
+        entityCode: invoiceDto.entityCode ?? null,
         salesmanId: invoiceDto.salesmanId ?? '..default..............',
         warehouseId: invoiceDto.warehouseId,
-        exchangeId: invoiceDto.exchangeId ?? '..rupiah...............',
+        exchangeId: exchangeId,
         isCash: invoiceDto.isCash ?? false,
-        dueDate: invoiceDto.dueDate ? (invoiceDto.dueDate instanceof Date ? invoiceDto.dueDate : new Date(invoiceDto.dueDate)) : null,
-        special: 'BL',
+        dueDate: invoiceDate, // due date = invoice date
+        taxDate: invoiceDate, // tax date = invoice date
+        special: 'SA',       // 'SA' = Saldo Awal (opening balance)
         remark: invoiceDto.remark ?? ' ',
-        value: invoiceValue,
-        opening: invoiceDto.opening ?? 1, // Mark as opening balance
+        value: 0,            // amount goes into opening, not value
+        opening: invoiceValue, // store the actual amount here
+        rate: currencyRate,
+        oleh: olehTimestamp,
         serie: ' ',
         taxInvoice: ' ',
         po: ' ',
         remark1: ' ',
         returnTo: '',
         transfer: 'n/a',
-        piutang: invoiceValue,
+        piutang: 0,          // 0 for opening balance
         tunai: 0,
         credit: 0,
         debit: 0,
@@ -422,7 +463,6 @@ export class InvoiceService extends BaseService {
         serialNumber: null,
         xkirim: 0,
         kunci: 0,
-        oleh: null,
         point: 0,
         pax: 0,
         dine: ' ',
@@ -438,7 +478,6 @@ export class InvoiceService extends BaseService {
         sedanCode: ' ',
         pawal: 0,
         okirim: null,
-        rate: 1.0,
         ivdTime: null,
         cetak1: 0,
         clientId: ' ',
@@ -511,26 +550,38 @@ export class InvoiceService extends BaseService {
 
     for (const invoiceDto of invoices) {
       const invoiceValue = invoiceDto.value;
+      const invoiceDate = invoiceDto.date instanceof Date ? invoiceDto.date : new Date(invoiceDto.date);
+      const now = new Date();
+      const olehTimestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+      const exchangeId = invoiceDto.exchangeId ?? '..rupiah...............';
+      const currencyRecord = await this.currencyRepository.findOne({ where: { cEXCpk: exchangeId } });
+      const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
+
       const invoiceData: Partial<Invoice> = {
         refNo: invoiceDto.refNo,
-        date: invoiceDto.date instanceof Date ? invoiceDto.date : new Date(invoiceDto.date),
+        date: invoiceDate,
         entityId: trimmedCustomerId,
+        entityCode: invoiceDto.entityCode ?? null,
         salesmanId: invoiceDto.salesmanId ?? '..default..............',
         warehouseId: invoiceDto.warehouseId,
-        exchangeId: invoiceDto.exchangeId ?? '..rupiah...............',
+        exchangeId: exchangeId,
         isCash: invoiceDto.isCash ?? false,
-        dueDate: invoiceDto.dueDate ? (invoiceDto.dueDate instanceof Date ? invoiceDto.dueDate : new Date(invoiceDto.dueDate)) : null,
-        special: 'JL', // JL = sales invoice for customer
+        dueDate: invoiceDate, // due date = invoice date
+        taxDate: invoiceDate, // tax date = invoice date
+        special: 'SA',       // 'SA' = Saldo Awal (opening balance)
         remark: invoiceDto.remark ?? ' ',
-        value: invoiceValue,
-        opening: invoiceDto.opening ?? 1,
+        value: 0,            // amount goes into opening, not value
+        opening: invoiceValue, // store the actual amount here
+        rate: currencyRate,
+        oleh: olehTimestamp,
         serie: ' ',
         taxInvoice: ' ',
         po: ' ',
         remark1: ' ',
         returnTo: '',
         transfer: 'n/a',
-        piutang: invoiceValue,
+        piutang: 0,          // 0 for opening balance
         tunai: 0,
         credit: 0,
         debit: 0,
@@ -555,7 +606,6 @@ export class InvoiceService extends BaseService {
         serialNumber: null,
         xkirim: 0,
         kunci: 0,
-        oleh: null,
         point: 0,
         pax: 0,
         dine: ' ',
@@ -571,7 +621,6 @@ export class InvoiceService extends BaseService {
         sedanCode: ' ',
         pawal: 0,
         okirim: null,
-        rate: 1.0,
         ivdTime: null,
         cetak1: 0,
         clientId: ' ',
@@ -632,7 +681,7 @@ export class InvoiceService extends BaseService {
   }
 
   async findOpeningBalances(): Promise<InvoiceResponseDto[]> {
-    const invoices = await this.invoiceRepository.findByEntityId(ENTITY_PK_OPENING, 'BL');
+    const invoices = await this.invoiceRepository.findByEntityId(ENTITY_PK_OPENING, 'SA');
     return invoices.map((invoice) => this.mapToResponseDto(invoice));
   }
 
@@ -649,7 +698,7 @@ export class InvoiceService extends BaseService {
       warehouseId: invoice.warehouseId,
       currencyId: invoice.exchangeId ?? '',
       remark: invoice.remark ?? null,
-      amount: invoice.value,
+      amount: invoice.opening ?? 0,
       lines: lines.map((line) => ({
         stockDetailId: line.id1 ?? '',
         stockCode: line.code ?? '',
@@ -657,6 +706,7 @@ export class InvoiceService extends BaseService {
         qty: line.qtyIn,
         purchasePrice: line.pokok,
         amount: line.amount ?? 0,
+        onHand: line.onHand ?? 0,
       })),
     };
   }
@@ -673,26 +723,39 @@ export class InvoiceService extends BaseService {
     const totalValue = dto.lines.reduce((sum, line) => sum + line.amount, 0);
     const invoiceDate = new Date(dto.date);
 
+    const now = new Date();
+    const olehTimestamp = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    const openingEntity = await this.entityRepository.findOne({ where: { cENTpk: ENTITY_PK_OPENING } });
+    const openingEntityCode = openingEntity?.cENTcode ?? null;
+
+    const currencyRecord = await this.currencyRepository.findOne({ where: { cEXCpk: dto.currencyId } });
+    const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
+
     // Reuse the same field assignments as createStockOpeningBalance (refNo is intentionally excluded — invoice no. is immutable after creation)
     const invoicePartial: Partial<Invoice> = {
       date: invoiceDate,
       entityId: ENTITY_PK_OPENING,
+      entityCode: openingEntityCode,
       salesmanId: SALESMAN_ID_DEFAULT,
       warehouseId: dto.warehouseId,
       exchangeId: dto.currencyId,
       isCash: false,
-      dueDate: null,
-      special: 'BL',
+      dueDate: invoiceDate,
+      taxDate: invoiceDate,
+      special: 'SA',
       remark: dto.remark ?? ' ',
-      value: totalValue,
-      opening: 1,
+      value: 0,
+      opening: 0,
+      rate: currencyRate,
+      oleh: olehTimestamp,
       serie: ' ',
       taxInvoice: ' ',
       po: ' ',
       remark1: ' ',
       returnTo: '',
       transfer: 'n/a',
-      piutang: totalValue,
+      piutang: 0,
       tunai: 0,
       credit: 0,
       debit: 0,
@@ -717,7 +780,6 @@ export class InvoiceService extends BaseService {
       serialNumber: null,
       xkirim: 0,
       kunci: 0,
-      oleh: null,
       point: 0,
       pax: 0,
       dine: ' ',
@@ -733,7 +795,6 @@ export class InvoiceService extends BaseService {
       sedanCode: ' ',
       pawal: 0,
       okirim: null,
-      rate: 1.0,
       ivdTime: null,
       cetak1: 0,
       clientId: ' ',
@@ -788,13 +849,21 @@ export class InvoiceService extends BaseService {
         (detId) => this.invoiceDetailRepository.exists(detId),
         'Unable to generate a unique primary key for Invoice Detail',
       );
+      const unitRecord = stockDetail.unitId
+        ? await this.unitRepository.findOne({ where: { cUNIpk: stockDetail.unitId } })
+        : null;
+      const unitName = unitRecord?.cUNIdesc ?? stockDetail.unit ?? 'def';
+      const qty = line.qty ?? 0;
+      const factor = stockDetail.conversionFactor ?? 0;
+      const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId);
+
       await this.invoiceDetailRepository.create({
         id: detailId,
         invoiceId: id,
         stockId: stockDetail.stockId,
-        qtyIn: line.qty ?? 0,
+        qtyIn: qty,
         qtyOut: 0,
-        zQtyIn: 0,
+        zQtyIn: qty * factor,
         zQtyOut: 0,
         price: line.purchasePrice ?? 0,
         disc1: 0,
@@ -805,17 +874,17 @@ export class InvoiceService extends BaseService {
         accEnt: 0,
         order,
         code: line.stockCode ?? stockDetail.code ?? 'def',
-        factor: stockDetail.conversionFactor ?? 0,
+        factor,
         ivdSplit: 0,
-        unit: line.unit ?? stockDetail.unitId ?? stockDetail.unit ?? 'def',
+        unit: unitName,
         amount: line.amount ?? null,
         accQtyTransfer: 0,
-        onHand: 0,
+        onHand,
         adjust: 0,
         porderId: ' ',
         cost: 0,
-        pokok: line.purchasePrice ?? 0,
-        stkppn: 0,
+        pokok: 0,
+        stkppn: 1,
         serialNumber: null,
         xkirim: null,
         sn: null,
@@ -849,6 +918,10 @@ export class InvoiceService extends BaseService {
 
     const updated = await this.invoiceRepository.findOne(id);
     return this.mapToResponseDto(updated!);
+  }
+
+  async getOnHandByStockId(stockId: string): Promise<number> {
+    return this.invoiceDetailRepository.getOnHandByStockId(stockId);
   }
 
   async findAll(): Promise<InvoiceResponseDto[]> {
@@ -900,16 +973,18 @@ export class InvoiceService extends BaseService {
   }
 
   private mapToResponseDto(invoice: Invoice): InvoiceResponseDto {
+    // For SA (opening balance) invoices, amount is stored in opening field; value is 0
+    const amount = invoice.special === 'SA' ? (invoice.opening || 0) : (invoice.value || 0);
     // Calculate remaining amount (piutang - paid amounts)
     const rem = invoice.isPaid ? 0 : (invoice.piutang - invoice.tunai - invoice.credit - invoice.debit);
-    
+
     return {
       id: invoice.id,
       invoice: invoice.refNo || invoice.id,
       date: invoice.date || new Date(),
       warehouse: invoice.warehouseId || '',
       currency: invoice.exchangeId || '',
-      amount: invoice.value || 0,
+      amount,
       remark: invoice.remark || null,
       rem: rem > 0 ? rem : null,
     };

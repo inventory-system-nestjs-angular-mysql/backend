@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { IWarehouseRepository } from '../../../../core/warehouse/repositories/warehouse.repository.interface';
 import { WAREHOUSE_REPOSITORY } from '../../../../core/warehouse/repositories/repository.tokens';
+import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
+import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
 import { Warehouse } from '../../../../core/warehouse/entities/warehouse.entity';
 import { CreateWarehouseDto } from '../../../../presentation/warehouse/dto/create-warehouse.dto';
 import { UpdateWarehouseDto } from '../../../../presentation/warehouse/dto/update-warehouse.dto';
@@ -17,6 +20,8 @@ export class WarehouseService extends BaseService {
   constructor(
     @Inject(WAREHOUSE_REPOSITORY)
     private readonly warehouseRepository: IWarehouseRepository,
+    @Inject(INVOICE_REPOSITORY)
+    private readonly invoiceRepository: IInvoiceRepository,
   ) {
     super();
   }
@@ -172,6 +177,14 @@ export class WarehouseService extends BaseService {
         `Warehouse with id '${id}' not found`,
       );
     }
+
+    const invoiceCount = await this.invoiceRepository.countByWarehouseId(id);
+    if (invoiceCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Warehouse because it is referenced by ${invoiceCount} invoice(s). Please remove or reassign those invoices first.`,
+      );
+    }
+
     await this.warehouseRepository.delete(id);
   }
 

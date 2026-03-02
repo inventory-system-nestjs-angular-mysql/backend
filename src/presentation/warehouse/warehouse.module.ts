@@ -5,9 +5,12 @@ import { WarehouseService } from '../../infrastructure/persistence/warehouse/ser
 import { WarehouseRepository } from '../../infrastructure/persistence/warehouse/repositories/warehouse.repository';
 import { WarehouseTypeOrmEntity } from '../../infrastructure/persistence/warehouse/entities/warehouse-typeorm.entity';
 import { WAREHOUSE_REPOSITORY } from '../../core/warehouse/repositories/repository.tokens';
+import { InvoiceRepository } from '../../infrastructure/persistence/invoice/repositories/invoice.repository';
+import { InvoiceTypeOrmEntity } from '../../infrastructure/persistence/invoice/entities/invoice-typeorm.entity';
+import { INVOICE_REPOSITORY } from '../../core/invoice/repositories/repository.tokens';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WarehouseTypeOrmEntity])],
+  imports: [TypeOrmModule.forFeature([WarehouseTypeOrmEntity, InvoiceTypeOrmEntity])],
   controllers: [WarehouseController],
   providers: [
     WarehouseService,
@@ -15,6 +18,11 @@ import { WAREHOUSE_REPOSITORY } from '../../core/warehouse/repositories/reposito
     {
       provide: WAREHOUSE_REPOSITORY,
       useClass: WarehouseRepository,
+    },
+    InvoiceRepository,
+    {
+      provide: INVOICE_REPOSITORY,
+      useClass: InvoiceRepository,
     },
   ],
   exports: [WarehouseService],

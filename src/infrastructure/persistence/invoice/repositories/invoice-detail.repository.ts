@@ -36,4 +36,13 @@ export class InvoiceDetailRepository implements IInvoiceDetailRepository {
     });
     return count > 0;
   }
+
+  async getOnHandByStockId(stockId: string): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder('ivd')
+      .select('SUM(ivd.nIVDqtyin) - SUM(ivd.nIVDqtyout)', 'onHand')
+      .where('ivd.cIVDfkSTK = :stockId', { stockId })
+      .getRawOne();
+    return Number(result?.onHand ?? 0);
+  }
 }
