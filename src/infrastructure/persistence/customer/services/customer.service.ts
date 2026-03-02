@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { ICustomerRepository } from '../../../../core/customer/repositories/customer.repository.interface';
 import { CUSTOMER_REPOSITORY } from '../../../../core/customer/repositories/repository.tokens';
+import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
+import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
 import { Customer } from '../../../../core/customer/entities/customer.entity';
 import { CreateCustomerDto } from '../../../../presentation/customer/dto/create-customer.dto';
 import { UpdateCustomerDto } from '../../../../presentation/customer/dto/update-customer.dto';
@@ -17,6 +20,8 @@ export class CustomerService extends BaseService {
   constructor(
     @Inject(CUSTOMER_REPOSITORY)
     private readonly customerRepository: ICustomerRepository,
+    @Inject(INVOICE_REPOSITORY)
+    private readonly invoiceRepository: IInvoiceRepository,
   ) {
     super();
   }
@@ -186,6 +191,14 @@ export class CustomerService extends BaseService {
     if (!exists) {
       throw new NotFoundException(`Customer with id '${id}' not found`);
     }
+
+    const invoiceCount = await this.invoiceRepository.countByEntityId(id);
+    if (invoiceCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Customer because it is referenced by ${invoiceCount} invoice(s). Please remove or reassign those invoices first.`,
+      );
+    }
+
     await this.customerRepository.delete(id);
   }
 

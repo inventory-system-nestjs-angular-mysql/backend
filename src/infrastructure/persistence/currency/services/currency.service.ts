@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { ICurrencyRepository } from '../../../../core/currency/repositories/currency.repository.interface';
 import { CURRENCY_REPOSITORY } from '../../../../core/currency/repositories/repository.tokens';
+import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
+import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
 import { Currency } from '../../../../core/currency/entities/currency.entity';
 import { CreateCurrencyDto } from '../../../../presentation/currency/dto/create-currency.dto';
 import { UpdateCurrencyDto } from '../../../../presentation/currency/dto/update-currency.dto';
@@ -17,6 +20,8 @@ export class CurrencyService extends BaseService {
   constructor(
     @Inject(CURRENCY_REPOSITORY)
     private readonly currencyRepository: ICurrencyRepository,
+    @Inject(INVOICE_REPOSITORY)
+    private readonly invoiceRepository: IInvoiceRepository,
   ) {
     super();
   }
@@ -99,6 +104,14 @@ export class CurrencyService extends BaseService {
     if (!exists) {
       throw new NotFoundException(`Currency with id '${id}' not found`);
     }
+
+    const invoiceCount = await this.invoiceRepository.countByExchangeId(id);
+    if (invoiceCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Currency because it is referenced by ${invoiceCount} invoice(s). Please remove or reassign those invoices first.`,
+      );
+    }
+
     await this.currencyRepository.delete(id);
   }
 

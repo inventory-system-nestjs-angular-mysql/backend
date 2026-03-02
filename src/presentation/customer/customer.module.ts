@@ -5,9 +5,12 @@ import { CustomerService } from '../../infrastructure/persistence/customer/servi
 import { CustomerRepository } from '../../infrastructure/persistence/customer/repositories/customer.repository';
 import { EntityTypeOrmEntity } from '../../infrastructure/persistence/entity/entities/entity-typeorm.entity';
 import { CUSTOMER_REPOSITORY } from '../../core/customer/repositories/repository.tokens';
+import { InvoiceRepository } from '../../infrastructure/persistence/invoice/repositories/invoice.repository';
+import { InvoiceTypeOrmEntity } from '../../infrastructure/persistence/invoice/entities/invoice-typeorm.entity';
+import { INVOICE_REPOSITORY } from '../../core/invoice/repositories/repository.tokens';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([EntityTypeOrmEntity])],
+  imports: [TypeOrmModule.forFeature([EntityTypeOrmEntity, InvoiceTypeOrmEntity])],
   controllers: [CustomerController],
   providers: [
     CustomerService,
@@ -15,6 +18,11 @@ import { CUSTOMER_REPOSITORY } from '../../core/customer/repositories/repository
     {
       provide: CUSTOMER_REPOSITORY,
       useClass: CustomerRepository,
+    },
+    InvoiceRepository,
+    {
+      provide: INVOICE_REPOSITORY,
+      useClass: InvoiceRepository,
     },
   ],
   exports: [CustomerService],

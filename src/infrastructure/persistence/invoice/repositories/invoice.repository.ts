@@ -30,7 +30,7 @@ export class InvoiceRepository implements IInvoiceRepository {
     return entity ? entity.toDomain() : null;
   }
 
-  async findByEntityId(entityId: string, special?: string): Promise<Invoice[]> {
+  async findByEntityId(entityId: string, special?: string, opening?: number): Promise<Invoice[]> {
     // Ensure entityId is valid
     if (!entityId || !entityId.trim()) {
       return [];
@@ -39,9 +39,12 @@ export class InvoiceRepository implements IInvoiceRepository {
     const trimmedEntityId = entityId.trim();
     const where: any = { cINVfkENT: trimmedEntityId };
 
-    // Filter by special type if provided
     if (special) {
       where.cINVspecial = special;
+    }
+
+    if (opening !== undefined) {
+      where.nInvOpening = opening;
     }
 
     const entities = await this.repository.find({
@@ -98,6 +101,18 @@ export class InvoiceRepository implements IInvoiceRepository {
       where: { cINVpk: id },
     });
     return count > 0;
+  }
+
+  async countByExchangeId(exchangeId: string): Promise<number> {
+    return this.repository.count({ where: { cINVfkEXC: exchangeId } });
+  }
+
+  async countByWarehouseId(warehouseId: string): Promise<number> {
+    return this.repository.count({ where: { cINVfkWHS: warehouseId } });
+  }
+
+  async countByEntityId(entityId: string): Promise<number> {
+    return this.repository.count({ where: { cINVfkENT: entityId } });
   }
 }
 

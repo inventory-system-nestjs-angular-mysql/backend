@@ -56,6 +56,10 @@ export class CreateInvoiceDto {
 
   @IsString()
   @IsOptional()
+  entityCode?: string | null; // supplier/customer code (cInvFkEntCode)
+
+  @IsString()
+  @IsOptional()
   remark?: string | null;
 
   @IsNumber()

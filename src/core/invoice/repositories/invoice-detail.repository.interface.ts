@@ -8,4 +8,5 @@ export interface IInvoiceDetailRepository {
   findByInvoiceId(invoiceId: string): Promise<InvoiceDetail[]>;
   deleteByInvoiceId(invoiceId: string): Promise<void>;
   exists(id: string): Promise<boolean>;
+  getOnHandByStockId(stockId: string): Promise<number>;
 }

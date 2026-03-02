@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { ISupplierRepository } from '../../../../core/supplier/repositories/supplier.repository.interface';
 import { SUPPLIER_REPOSITORY } from '../../../../core/supplier/repositories/repository.tokens';
+import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
+import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
 import { Supplier } from '../../../../core/supplier/entities/supplier.entity';
 import { CreateSupplierDto } from '../../../../presentation/supplier/dto/create-supplier.dto';
 import { UpdateSupplierDto } from '../../../../presentation/supplier/dto/update-supplier.dto';
@@ -17,6 +20,8 @@ export class SupplierService extends BaseService {
   constructor(
     @Inject(SUPPLIER_REPOSITORY)
     private readonly supplierRepository: ISupplierRepository,
+    @Inject(INVOICE_REPOSITORY)
+    private readonly invoiceRepository: IInvoiceRepository,
   ) {
     super();
   }
@@ -174,6 +179,14 @@ export class SupplierService extends BaseService {
     if (!exists) {
       throw new NotFoundException(`Supplier with id '${id}' not found`);
     }
+
+    const invoiceCount = await this.invoiceRepository.countByEntityId(id);
+    if (invoiceCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Supplier because it is referenced by ${invoiceCount} invoice(s). Please remove or reassign those invoices first.`,
+      );
+    }
+
     await this.supplierRepository.delete(id);
   }
 

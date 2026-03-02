@@ -75,6 +75,14 @@ export class InvoiceController {
     return this.invoiceService.updateOpeningBalance(id, dto);
   }
 
+  @Get('on-hand/:stockId')
+  async getOnHandByStockId(
+    @Param('stockId') stockId: string,
+  ): Promise<{ onHand: number }> {
+    const onHand = await this.invoiceService.getOnHandByStockId(stockId);
+    return { onHand };
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<InvoiceResponseDto> {
     return this.invoiceService.findOne(id);

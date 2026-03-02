@@ -90,5 +90,9 @@ export class StockDetailRepository implements IStockDetailRepository {
     const count = await this.repository.count({ where: { cSTDpk: id } });
     return count > 0;
   }
+
+  async countByUnitId(unitId: string): Promise<number> {
+    return this.repository.count({ where: { cSTDfkUNI: unitId } });
+  }
 }
 
