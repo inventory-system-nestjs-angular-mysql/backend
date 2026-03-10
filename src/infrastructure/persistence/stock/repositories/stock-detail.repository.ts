@@ -94,5 +94,10 @@ export class StockDetailRepository implements IStockDetailRepository {
   async countByUnitId(unitId: string): Promise<number> {
     return this.repository.count({ where: { cSTDfkUNI: unitId } });
   }
+
+  async findByStockIdAndCode(stockId: string, code: string): Promise<StockDetail | null> {
+    const entity = await this.repository.findOne({ where: { cSTDfkSTK: stockId, cSTDcode: code } });
+    return entity ? entity.toDomain() : null;
+  }
 }
 

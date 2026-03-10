@@ -9,6 +9,8 @@ import { ISupplierRepository } from '../../../../core/supplier/repositories/supp
 import { SUPPLIER_REPOSITORY } from '../../../../core/supplier/repositories/repository.tokens';
 import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
 import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
+import { IStockRepository } from '../../../../core/stock/repositories/stock.repository.interface';
+import { STOCK_REPOSITORY } from '../../../../core/stock/repositories/repository.tokens';
 import { Supplier } from '../../../../core/supplier/entities/supplier.entity';
 import { CreateSupplierDto } from '../../../../presentation/supplier/dto/create-supplier.dto';
 import { UpdateSupplierDto } from '../../../../presentation/supplier/dto/update-supplier.dto';
@@ -22,6 +24,8 @@ export class SupplierService extends BaseService {
     private readonly supplierRepository: ISupplierRepository,
     @Inject(INVOICE_REPOSITORY)
     private readonly invoiceRepository: IInvoiceRepository,
+    @Inject(STOCK_REPOSITORY)
+    private readonly stockRepository: IStockRepository,
   ) {
     super();
   }
@@ -184,6 +188,13 @@ export class SupplierService extends BaseService {
     if (invoiceCount > 0) {
       throw new BadRequestException(
         `Cannot delete Supplier because it is referenced by ${invoiceCount} invoice(s). Please remove or reassign those invoices first.`,
+      );
+    }
+
+    const stockCount = await this.stockRepository.countByEntityId(id);
+    if (stockCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Supplier because it is referenced by ${stockCount} stock item(s). Please remove or reassign those stock items first.`,
       );
     }
 

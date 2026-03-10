@@ -9,6 +9,8 @@ import { ICustomerRepository } from '../../../../core/customer/repositories/cust
 import { CUSTOMER_REPOSITORY } from '../../../../core/customer/repositories/repository.tokens';
 import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
 import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
+import { IStockRepository } from '../../../../core/stock/repositories/stock.repository.interface';
+import { STOCK_REPOSITORY } from '../../../../core/stock/repositories/repository.tokens';
 import { Customer } from '../../../../core/customer/entities/customer.entity';
 import { CreateCustomerDto } from '../../../../presentation/customer/dto/create-customer.dto';
 import { UpdateCustomerDto } from '../../../../presentation/customer/dto/update-customer.dto';
@@ -22,6 +24,8 @@ export class CustomerService extends BaseService {
     private readonly customerRepository: ICustomerRepository,
     @Inject(INVOICE_REPOSITORY)
     private readonly invoiceRepository: IInvoiceRepository,
+    @Inject(STOCK_REPOSITORY)
+    private readonly stockRepository: IStockRepository,
   ) {
     super();
   }
@@ -196,6 +200,13 @@ export class CustomerService extends BaseService {
     if (invoiceCount > 0) {
       throw new BadRequestException(
         `Cannot delete Customer because it is referenced by ${invoiceCount} invoice(s). Please remove or reassign those invoices first.`,
+      );
+    }
+
+    const stockCount = await this.stockRepository.countByEntityId(id);
+    if (stockCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Customer because it is referenced by ${stockCount} stock item(s). Please remove or reassign those stock items first.`,
       );
     }
 

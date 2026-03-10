@@ -7,6 +7,7 @@ import { InvoiceDetailRepository } from '../../infrastructure/persistence/invoic
 import { InvoiceTypeOrmEntity } from '../../infrastructure/persistence/invoice/entities/invoice-typeorm.entity';
 import { InvoiceDetailTypeOrmEntity } from '../../infrastructure/persistence/invoice/entities/invoice-detail-typeorm.entity';
 import { StockDetailTypeOrmEntity } from '../../infrastructure/persistence/stock/entities/stock-detail-typeorm.entity';
+import { StockTypeOrmEntity } from '../../infrastructure/persistence/stock/entities/stock-typeorm.entity';
 import { StockDetailRepository } from '../../infrastructure/persistence/stock/repositories/stock-detail.repository';
 import { EntityTypeOrmEntity } from '../../infrastructure/persistence/entity/entities/entity-typeorm.entity';
 import { UnitTypeOrmEntity } from '../../infrastructure/persistence/unit/entities/unit-typeorm.entity';
@@ -20,6 +21,7 @@ import { STOCK_DETAIL_REPOSITORY } from '../../core/stock/repositories/repositor
       InvoiceTypeOrmEntity,
       InvoiceDetailTypeOrmEntity,
       StockDetailTypeOrmEntity,
+      StockTypeOrmEntity,
       EntityTypeOrmEntity,
       UnitTypeOrmEntity,
       CurrencyTypeOrmEntity,

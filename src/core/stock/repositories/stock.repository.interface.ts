@@ -13,5 +13,7 @@ export interface IStockRepository {
   exists(id: string): Promise<boolean>;
   existsByDescription(description: string): Promise<boolean>;
   countByStockGroupId(stockGroupId: string): Promise<number>;
+  countByBrandId(brandId: string): Promise<number>;
+  countByEntityId(entityId: string): Promise<number>;
 }
 

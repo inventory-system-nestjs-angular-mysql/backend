@@ -347,15 +347,20 @@ export class StockService extends BaseService {
     stocks.forEach((s) => {
       if (s) stockMap.set(s.id, s);
     });
-    return stockDetails.map((detail) => ({
-      id: detail.id,
-      stockId: detail.stockId,
-      stockName: stockMap.get(detail.stockId)?.description ?? '',
-      stockCode: detail.code,
-      unit: detail.unitId,
-      unitDescription: detail.unit ?? undefined,
-      purchase: detail.price ?? 0,
-    }));
+    return stockDetails.map((detail) => {
+      const stock = stockMap.get(detail.stockId);
+      const factor = detail.conversionFactor ?? 1;
+      return {
+        id: detail.id,
+        stockId: detail.stockId,
+        stockName: stock?.description ?? '',
+        stockCode: detail.code,
+        unit: detail.unitId,
+        unitDescription: detail.unit ?? undefined,
+        purchase: (stock?.purchasePrice ?? 0) * factor,
+        purchaseX: (stock?.purchasePriceDollar ?? 0) * factor,
+      };
+    });
   }
 
   async findStockDetails(stockId: string): Promise<StockDetailResponseDto[]> {

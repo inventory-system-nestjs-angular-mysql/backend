@@ -10,4 +10,5 @@ export class StockDetailLookupItemDto {
   unit: string; // unit id (e.g. for invoice detail)
   unitDescription?: string;
   purchase: number;
+  purchaseX: number;
 }
