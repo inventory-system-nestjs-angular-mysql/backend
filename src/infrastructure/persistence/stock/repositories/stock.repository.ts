@@ -90,11 +90,19 @@ export class StockRepository implements IStockRepository {
   async countByStockGroupId(stockGroupId: string): Promise<number> {
     // Count stocks where cSTKfkGRP matches the stockGroupId
     const count = await this.repository.count({
-      where: { 
-        cSTKfkGRP: stockGroupId 
+      where: {
+        cSTKfkGRP: stockGroupId
       }
     });
     return count;
+  }
+
+  async countByBrandId(brandId: string): Promise<number> {
+    return this.repository.count({ where: { cSTKfkBRD: brandId } });
+  }
+
+  async countByEntityId(entityId: string): Promise<number> {
+    return this.repository.count({ where: { cSTKfkENT: entityId } });
   }
 }
 

@@ -14,6 +14,7 @@ import { STOCK_DETAIL_REPOSITORY } from '../../../../core/stock/repositories/rep
 import { EntityTypeOrmEntity } from '../../entity/entities/entity-typeorm.entity';
 import { UnitTypeOrmEntity } from '../../unit/entities/unit-typeorm.entity';
 import { CurrencyTypeOrmEntity } from '../../currency/entities/currency-typeorm.entity';
+import { StockTypeOrmEntity } from '../../stock/entities/stock-typeorm.entity';
 import { Invoice } from '../../../../core/invoice/entities/invoice.entity';
 import { InvoiceResponseDto } from '../../../../presentation/invoice/dto/invoice-response.dto';
 import { CreateInvoiceDto } from '../../../../presentation/invoice/dto/create-invoice.dto';
@@ -40,6 +41,8 @@ export class InvoiceService extends BaseService {
     private readonly unitRepository: Repository<UnitTypeOrmEntity>,
     @InjectRepository(CurrencyTypeOrmEntity)
     private readonly currencyRepository: Repository<CurrencyTypeOrmEntity>,
+    @InjectRepository(StockTypeOrmEntity)
+    private readonly stockRepository: Repository<StockTypeOrmEntity>,
   ) {
     super();
   }
@@ -147,7 +150,7 @@ export class InvoiceService extends BaseService {
       waste: 0, // Default: 0.0
       gratis: 0, // Default: 0.0
       sj: '', // Default: ''
-      tglSj: null, // nullable, no default
+      tglSj: null,
       pilih: 0, // Default: 0
       value1: 0, // Default: 0.0
       ratep: 1.0, // Default: 1.0
@@ -192,7 +195,6 @@ export class InvoiceService extends BaseService {
       'Unable to generate a unique primary key for Invoice',
     );
 
-    const totalValue = dto.lines.reduce((sum, line) => sum + line.amount, 0);
     const invoiceDate = new Date(dto.date);
 
     const now = new Date();
@@ -206,7 +208,7 @@ export class InvoiceService extends BaseService {
 
     const invoicePartial: Partial<Invoice> = {
       id: invoiceId,
-      refNo: dto.refNo,
+      refNo: dto.refNo?.toUpperCase(),
       date: invoiceDate,
       entityId: ENTITY_PK_OPENING,
       entityCode: openingEntityCode,
@@ -277,7 +279,7 @@ export class InvoiceService extends BaseService {
       waste: 0,
       gratis: 0,
       sj: '',
-      tglSj: null,
+      tglSj: new Date(),
       pilih: 0,
       value1: 0,
       ratep: 1.0,
@@ -327,8 +329,15 @@ export class InvoiceService extends BaseService {
         : null;
       const unitName = unitRecord?.cUNIdesc ?? stockDetail.unit ?? 'def';
       const qty = line.qty ?? 0;
-      const factor = stockDetail.conversionFactor ?? 0;
+      const factor = stockDetail.conversionFactor ?? 1;
       const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId);
+
+      const stock = await this.stockRepository.findOne({ where: { cSTKpk: stockDetail.stockId } });
+      const basePrice = currencyRate === 1
+        ? Number(stock?.nSTKbuy ?? 0)
+        : Number(stock?.nSTKxbuy ?? 0);
+      const computedPrice = basePrice * factor;
+      const computedAmount = qty * computedPrice;
 
       await this.invoiceDetailRepository.create({
         id: detailId,
@@ -338,7 +347,7 @@ export class InvoiceService extends BaseService {
         qtyOut: 0,
         zQtyIn: qty * factor,
         zQtyOut: 0,
-        price: line.purchasePrice ?? 0,
+        price: computedPrice,
         disc1: 0,
         disc2: 0,
         disc3: 0,
@@ -346,11 +355,11 @@ export class InvoiceService extends BaseService {
         accQty: 0,
         accEnt: 0,
         order,
-        code: line.stockCode ?? stockDetail.code ?? 'def',
+        code: (line.stockCode ?? stockDetail.code ?? 'def').toUpperCase(),
         factor,
         ivdSplit: 0,
         unit: unitName,
-        amount: line.amount ?? null,
+        amount: computedAmount,
         accQtyTransfer: 0,
         onHand,
         adjust: 0,
@@ -363,7 +372,7 @@ export class InvoiceService extends BaseService {
         sn: null,
         memo: null,
         kirim: 1,
-        id1: line.stockDetailId,
+        id1: ' ',
         id2: ' ',
         id3: ' ',
         batch: ' ',
@@ -416,7 +425,7 @@ export class InvoiceService extends BaseService {
       const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
 
       const invoiceData: Partial<Invoice> = {
-        refNo: invoiceDto.refNo,
+        refNo: invoiceDto.refNo?.toUpperCase(),
         date: invoiceDate,
         entityId: trimmedSupplierId,
         entityCode: invoiceDto.entityCode ?? null,
@@ -559,7 +568,7 @@ export class InvoiceService extends BaseService {
       const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
 
       const invoiceData: Partial<Invoice> = {
-        refNo: invoiceDto.refNo,
+        refNo: invoiceDto.refNo?.toUpperCase(),
         date: invoiceDate,
         entityId: trimmedCustomerId,
         entityCode: invoiceDto.entityCode ?? null,
@@ -682,7 +691,12 @@ export class InvoiceService extends BaseService {
 
   async findOpeningBalances(): Promise<InvoiceResponseDto[]> {
     const invoices = await this.invoiceRepository.findByEntityId(ENTITY_PK_OPENING, 'SA');
-    return invoices.map((invoice) => this.mapToResponseDto(invoice));
+    const ids = invoices.map((i) => i.id);
+    const amountMap = await this.invoiceDetailRepository.sumAmountsByInvoiceIds(ids);
+    return invoices.map((invoice) => {
+      const detailTotal = amountMap.get(invoice.id) ?? 0;
+      return this.mapToResponseDto({ ...invoice, opening: detailTotal });
+    });
   }
 
   async findOpeningBalanceDetail(id: string): Promise<OpeningBalanceDetailDto> {
@@ -699,14 +713,19 @@ export class InvoiceService extends BaseService {
       currencyId: invoice.exchangeId ?? '',
       remark: invoice.remark ?? null,
       amount: invoice.opening ?? 0,
-      lines: lines.map((line) => ({
-        stockDetailId: line.id1 ?? '',
+      lines: await Promise.all(lines.map(async (line) => {
+        const stockDetail = (line.stockId && line.code)
+          ? await this.stockDetailRepository.findByStockIdAndCode(line.stockId, line.code)
+          : null;
+        return {
+        stockDetailId: stockDetail?.id ?? '',
         stockCode: line.code ?? '',
         unit: line.unit ?? '',
         qty: line.qtyIn,
-        purchasePrice: line.pokok,
-        amount: line.amount ?? 0,
-        onHand: line.onHand ?? 0,
+          purchasePrice: line.price,
+          amount: line.amount ?? 0,
+          onHand: line.onHand ?? 0,
+        };
       })),
     };
   }
@@ -720,7 +739,6 @@ export class InvoiceService extends BaseService {
       throw new NotFoundException(`Opening balance invoice with id '${id}' not found`);
     }
 
-    const totalValue = dto.lines.reduce((sum, line) => sum + line.amount, 0);
     const invoiceDate = new Date(dto.date);
 
     const now = new Date();
@@ -804,7 +822,7 @@ export class InvoiceService extends BaseService {
       waste: 0,
       gratis: 0,
       sj: '',
-      tglSj: null,
+      tglSj: new Date(),
       pilih: 0,
       value1: 0,
       ratep: 1.0,
@@ -854,8 +872,15 @@ export class InvoiceService extends BaseService {
         : null;
       const unitName = unitRecord?.cUNIdesc ?? stockDetail.unit ?? 'def';
       const qty = line.qty ?? 0;
-      const factor = stockDetail.conversionFactor ?? 0;
+      const factor = stockDetail.conversionFactor ?? 1;
       const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId);
+
+      const stock = await this.stockRepository.findOne({ where: { cSTKpk: stockDetail.stockId } });
+      const basePrice = currencyRate === 1
+        ? Number(stock?.nSTKbuy ?? 0)
+        : Number(stock?.nSTKxbuy ?? 0);
+      const computedPrice = basePrice * factor;
+      const computedAmount = qty * computedPrice;
 
       await this.invoiceDetailRepository.create({
         id: detailId,
@@ -865,7 +890,7 @@ export class InvoiceService extends BaseService {
         qtyOut: 0,
         zQtyIn: qty * factor,
         zQtyOut: 0,
-        price: line.purchasePrice ?? 0,
+        price: computedPrice,
         disc1: 0,
         disc2: 0,
         disc3: 0,
@@ -873,11 +898,11 @@ export class InvoiceService extends BaseService {
         accQty: 0,
         accEnt: 0,
         order,
-        code: line.stockCode ?? stockDetail.code ?? 'def',
+        code: (line.stockCode ?? stockDetail.code ?? 'def').toUpperCase(),
         factor,
         ivdSplit: 0,
         unit: unitName,
-        amount: line.amount ?? null,
+        amount: computedAmount,
         accQtyTransfer: 0,
         onHand,
         adjust: 0,
@@ -890,7 +915,7 @@ export class InvoiceService extends BaseService {
         sn: null,
         memo: null,
         kirim: 1,
-        id1: line.stockDetailId,
+        id1: ' ',
         id2: ' ',
         id3: ' ',
         batch: ' ',

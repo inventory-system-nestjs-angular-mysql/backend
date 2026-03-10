@@ -5,9 +5,12 @@ import { BrandService } from '../../infrastructure/persistence/brand/services/br
 import { BrandRepository } from '../../infrastructure/persistence/brand/repositories/brand.repository';
 import { BrandTypeOrmEntity } from '../../infrastructure/persistence/brand/entities/brand-typeorm.entity';
 import { BRAND_REPOSITORY } from '../../core/brand/repositories/repository.tokens';
+import { StockTypeOrmEntity } from '../../infrastructure/persistence/stock/entities/stock-typeorm.entity';
+import { StockRepository } from '../../infrastructure/persistence/stock/repositories/stock.repository';
+import { STOCK_REPOSITORY } from '../../core/stock/repositories/repository.tokens';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BrandTypeOrmEntity])],
+  imports: [TypeOrmModule.forFeature([BrandTypeOrmEntity, StockTypeOrmEntity])],
   controllers: [BrandController],
   providers: [
     BrandService,
@@ -15,6 +18,11 @@ import { BRAND_REPOSITORY } from '../../core/brand/repositories/repository.token
     {
       provide: BRAND_REPOSITORY,
       useClass: BrandRepository,
+    },
+    StockRepository,
+    {
+      provide: STOCK_REPOSITORY,
+      useClass: StockRepository,
     },
   ],
   exports: [BrandService],

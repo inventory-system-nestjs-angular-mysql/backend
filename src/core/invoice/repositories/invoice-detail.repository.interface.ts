@@ -9,4 +9,5 @@ export interface IInvoiceDetailRepository {
   deleteByInvoiceId(invoiceId: string): Promise<void>;
   exists(id: string): Promise<boolean>;
   getOnHandByStockId(stockId: string): Promise<number>;
+  sumAmountsByInvoiceIds(invoiceIds: string[]): Promise<Map<string, number>>;
 }

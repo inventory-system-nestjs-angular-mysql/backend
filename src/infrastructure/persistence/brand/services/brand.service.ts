@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { IBrandRepository } from '../../../../core/brand/repositories/brand.repository.interface';
 import { BRAND_REPOSITORY } from '../../../../core/brand/repositories/repository.tokens';
+import { IStockRepository } from '../../../../core/stock/repositories/stock.repository.interface';
+import { STOCK_REPOSITORY } from '../../../../core/stock/repositories/repository.tokens';
 import { Brand } from '../../../../core/brand/entities/brand.entity';
 import { CreateBrandDto } from '../../../../presentation/brand/dto/create-brand.dto';
 import { UpdateBrandDto } from '../../../../presentation/brand/dto/update-brand.dto';
@@ -17,6 +20,8 @@ export class BrandService extends BaseService {
   constructor(
     @Inject(BRAND_REPOSITORY)
     private readonly brandRepository: IBrandRepository,
+    @Inject(STOCK_REPOSITORY)
+    private readonly stockRepository: IStockRepository,
   ) {
     super();
   }
@@ -124,6 +129,14 @@ export class BrandService extends BaseService {
         `Brand with id '${id}' not found`,
       );
     }
+
+    const stockCount = await this.stockRepository.countByBrandId(id);
+    if (stockCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Brand because it is referenced by ${stockCount} stock item(s). Please remove or reassign those stock items first.`,
+      );
+    }
+
     await this.brandRepository.delete(id);
   }
 
