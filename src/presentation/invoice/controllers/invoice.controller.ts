@@ -75,6 +75,11 @@ export class InvoiceController {
     return this.invoiceService.updateOpeningBalance(id, dto);
   }
 
+  @Delete('opening-balance/:id')
+  async removeOpeningBalance(@Param('id') id: string): Promise<void> {
+    return this.invoiceService.removeOpeningBalance(id);
+  }
+
   @Get('on-hand/:stockId')
   async getOnHandByStockId(
     @Param('stockId') stockId: string,
