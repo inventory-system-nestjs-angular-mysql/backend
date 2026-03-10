@@ -997,6 +997,15 @@ export class InvoiceService extends BaseService {
     await this.invoiceRepository.delete(id);
   }
 
+  async removeOpeningBalance(id: string): Promise<void> {
+    const invoice = await this.invoiceRepository.findOne(id);
+    if (!invoice) {
+      throw new NotFoundException(`Opening balance invoice with id '${id}' not found`);
+    }
+    await this.invoiceDetailRepository.deleteByInvoiceId(id);
+    await this.invoiceRepository.delete(id);
+  }
+
   private mapToResponseDto(invoice: Invoice): InvoiceResponseDto {
     // For SA (opening balance) invoices, amount is stored in opening field; value is 0
     const amount = invoice.special === 'SA' ? (invoice.opening || 0) : (invoice.value || 0);
