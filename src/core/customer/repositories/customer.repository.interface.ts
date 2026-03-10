@@ -15,5 +15,6 @@ export interface ICustomerRepository {
   existsByCode(code: string): Promise<boolean>;
   existsByDescription(description: string): Promise<boolean>;
   countByCityId(cityId: string): Promise<number>;
+  countBySalesmanId(salesmanId: string): Promise<number>;
 }
 

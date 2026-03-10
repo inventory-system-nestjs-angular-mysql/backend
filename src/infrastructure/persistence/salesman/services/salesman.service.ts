@@ -2,10 +2,15 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Inject,
 } from '@nestjs/common';
 import { ISalesmanRepository } from '../../../../core/salesman/repositories/salesman.repository.interface';
 import { SALESMAN_REPOSITORY } from '../../../../core/salesman/repositories/repository.tokens';
+import { IInvoiceRepository } from '../../../../core/invoice/repositories/invoice.repository.interface';
+import { INVOICE_REPOSITORY } from '../../../../core/invoice/repositories/repository.tokens';
+import { ICustomerRepository } from '../../../../core/customer/repositories/customer.repository.interface';
+import { CUSTOMER_REPOSITORY } from '../../../../core/customer/repositories/repository.tokens';
 import { Salesman } from '../../../../core/salesman/entities/salesman.entity';
 import { CreateSalesmanDto } from '../../../../presentation/salesman/dto/create-salesman.dto';
 import { UpdateSalesmanDto } from '../../../../presentation/salesman/dto/update-salesman.dto';
@@ -17,6 +22,10 @@ export class SalesmanService extends BaseService {
   constructor(
     @Inject(SALESMAN_REPOSITORY)
     private readonly salesmanRepository: ISalesmanRepository,
+    @Inject(INVOICE_REPOSITORY)
+    private readonly invoiceRepository: IInvoiceRepository,
+    @Inject(CUSTOMER_REPOSITORY)
+    private readonly customerRepository: ICustomerRepository,
   ) {
     super();
   }
@@ -109,6 +118,21 @@ export class SalesmanService extends BaseService {
     if (!exists) {
       throw new NotFoundException(`Salesman with id '${id}' not found`);
     }
+
+    const invoiceCount = await this.invoiceRepository.countBySalesmanId(id);
+    if (invoiceCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Salesman because it is referenced by ${invoiceCount} invoice(s). Please remove or reassign those invoices first.`,
+      );
+    }
+
+    const customerCount = await this.customerRepository.countBySalesmanId(id);
+    if (customerCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete Salesman because it is assigned to ${customerCount} customer(s). Please reassign those customers first.`,
+      );
+    }
+
     await this.salesmanRepository.delete(id);
   }
 
