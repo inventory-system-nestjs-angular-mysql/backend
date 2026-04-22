@@ -23,7 +23,7 @@ export default registerAs(
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_DATABASE || 'eisdata',
     entities: [StockGroupTypeOrmEntity, StockTypeOrmEntity, StockDetailTypeOrmEntity, UnitTypeOrmEntity,BankTypeOrmEntity, WarehouseTypeOrmEntity, CityTypeOrmEntity, BrandTypeOrmEntity, EntityTypeOrmEntity, SalesmanTypeOrmEntity, InvoiceTypeOrmEntity, InvoiceDetailTypeOrmEntity, CurrencyTypeOrmEntity],
-    synchronize: process.env.NODE_ENV !== 'production',
+    synchronize: false,
     logging: process.env.NODE_ENV === 'development',
     charset: 'utf8mb4',
     timezone: '+00:00',
