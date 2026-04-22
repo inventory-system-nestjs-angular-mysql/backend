@@ -112,12 +112,16 @@ export class CustomerRepository implements ICustomerRepository {
   async countByCityId(cityId: string): Promise<number> {
     // Count customers where cENTfkCIT matches the cityId
     const count = await this.repository.count({
-      where: { 
+      where: {
         cENTfkCIT: cityId,
         nENTcust: 1
       }
     });
     return count;
+  }
+
+  async countBySalesmanId(salesmanId: string): Promise<number> {
+    return this.repository.count({ where: { cENTfkSAL: salesmanId, nENTcust: 1 } });
   }
 
   /**

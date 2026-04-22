@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { InvoiceService } from '../../../infrastructure/persistence/invoice/services/invoice.service';
 import { CreateInvoiceDto } from '../dto/create-invoice.dto';
@@ -75,11 +76,17 @@ export class InvoiceController {
     return this.invoiceService.updateOpeningBalance(id, dto);
   }
 
+  @Delete('opening-balance/:id')
+  async removeOpeningBalance(@Param('id') id: string): Promise<void> {
+    return this.invoiceService.removeOpeningBalance(id);
+  }
+
   @Get('on-hand/:stockId')
   async getOnHandByStockId(
     @Param('stockId') stockId: string,
+    @Query('warehouseId') warehouseId: string,
   ): Promise<{ onHand: number }> {
-    const onHand = await this.invoiceService.getOnHandByStockId(stockId);
+    const onHand = await this.invoiceService.getOnHandByStockId(stockId, warehouseId);
     return { onHand };
   }
 

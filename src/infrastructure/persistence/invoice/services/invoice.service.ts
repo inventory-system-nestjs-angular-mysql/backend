@@ -16,6 +16,7 @@ import { UnitTypeOrmEntity } from '../../unit/entities/unit-typeorm.entity';
 import { CurrencyTypeOrmEntity } from '../../currency/entities/currency-typeorm.entity';
 import { StockTypeOrmEntity } from '../../stock/entities/stock-typeorm.entity';
 import { Invoice } from '../../../../core/invoice/entities/invoice.entity';
+import { DEFAULT_INVOICE, DEFAULT_INVOICE_DETAIL } from '../../../../core/invoice/defaults/invoice.defaults';
 import { InvoiceResponseDto } from '../../../../presentation/invoice/dto/invoice-response.dto';
 import { CreateInvoiceDto } from '../../../../presentation/invoice/dto/create-invoice.dto';
 import { UpdateInvoiceDto } from '../../../../presentation/invoice/dto/update-invoice.dto';
@@ -78,105 +79,21 @@ export class InvoiceService extends BaseService {
     const invoiceValue = createInvoiceDto.value;
 
     const invoicePartial: Partial<Invoice> = {
+      ...DEFAULT_INVOICE,
       id,
       refNo: createInvoiceDto.refNo,
       date: new Date(createInvoiceDto.date),
-      entityId: createInvoiceDto.entityId || null, // Use || to handle empty strings as well
-      salesmanId: createInvoiceDto.salesmanId ?? '..default..............', // Default: '..default..............'
+      entityId: createInvoiceDto.entityId || null,
+      salesmanId: createInvoiceDto.salesmanId ?? '..default..............',
       warehouseId: createInvoiceDto.warehouseId,
-      exchangeId: createInvoiceDto.exchangeId ?? '..rupiah...............', // Default: '..rupiah...............'
-      isCash: createInvoiceDto.isCash ?? false, // Default: 0 (false)
+      exchangeId: createInvoiceDto.exchangeId ?? '..rupiah...............',
+      isCash: createInvoiceDto.isCash ?? false,
       dueDate: createInvoiceDto.dueDate ? new Date(createInvoiceDto.dueDate) : null,
       special: createInvoiceDto.special ?? null,
-      remark: createInvoiceDto.remark ?? ' ', // Default: ' '
+      remark: createInvoiceDto.remark ?? ' ',
       value: invoiceValue,
-      opening: createInvoiceDto.opening ?? 0, // Default: 0.0
-      // Set default values for fields with database defaults
-      serie: ' ', // Default: ' '
-      taxInvoice: ' ', // Default: ' '
-      po: ' ', // Default: ' '
-      remark1: ' ', // Default: ' '
-      returnTo: '', // Default: ''
-      transfer: 'n/a', // Default: 'n/a'
-      // Set default values for opening balance invoices
-      piutang: invoiceValue, // Total amount owed
-      tunai: 0, // Default: 0.0
-      credit: 0, // Default: 0.0
-      debit: 0, // Default: 0.0
-      isPaid: false, // Default: 0 (false)
-      discount: 0, // Default: 0.0
-      discount1: 0, // Default: 0.0
-      discount2: 0, // Default: 0.0
-      discount3: 0, // Default: 0.0
-      tax: 0, // Default: 0.0
-      freight: 0, // Default: 0.0
-      option: 0, // Default: 0
-      cetak: 0, // Default: 0
-      dp: 0, // Default: 0.0
-      voucher: 0, // Default: 0.0
-      jam: 0, // Default: 0
-      noCard: ' ', // Default: ' '
-      jenisCard: ' ', // Default: ' '
-      ccardNama: ' ', // Default: ' '
-      ccardOto: ' ', // Default: ' '
-      ccardNilai: 0, // Default: 0.0
-      kembali: 0, // Default: 0.0
-      serialNumber: null, // serino - nullable, no default
-      xkirim: 0, // Default: 0
-      kunci: 0, // Default: 0
-      oleh: null, // nullable, no default
-      point: 0, // Default: 0
-      pax: 0, // Default: 0
-      dine: ' ', // Default: ' '
-      postransfer: 0, // Default: 0
-      hadiah: null, // nullable, no default
-      meja: ' ', // Default: ' '
-      mobileId: ' ', // Default: ' '
-      promoValue: 0, // Default: 0.0
-      promoDiscount: 0, // Default: 0.0
-      promoSales: 0, // Default: 0.0
-      sedan: ' ', // Default: ' '
-      km: 0, // Default: 0
-      sedanCode: ' ', // Default: ' '
-      pawal: 0, // Default: 0
-      okirim: null, // nullable, no default
-      rate: 1.0, // Default: 1.0
-      ivdTime: null, // nullable, no default
-      cetak1: 0, // Default: 0
-      clientId: ' ', // Default: ' '
-      posId: ' ', // Default: ' '
-      camId: ' ', // Default: ' '
-      promog: ' ', // Default: ' '
-      waste: 0, // Default: 0.0
-      gratis: 0, // Default: 0.0
-      sj: '', // Default: ''
-      tglSj: null,
-      pilih: 0, // Default: 0
-      value1: 0, // Default: 0.0
-      ratep: 1.0, // Default: 1.0
-      epajak: null, // nullable, no default
-      persen: 0, // Default: 0.0
-      mobile: 0, // Default: 0.0
-      fg: 0, // Default: 0
-      poAmount: 0, // Default: 0.0
-      expire: 0, // Default: 0
-      app: 0, // Default: 0
-      zap: 0, // Default: 0
-      lain: '', // Default: ''
-      scan1: '', // Default: ''
-      scan2: '', // Default: ''
-      scan3: '', // Default: ''
-      scan4: '', // Default: ''
-      inv12: 1, // Default: 1
-      canvas: '01', // Default: '01'
-      tambah: '', // Default: ''
-      fee: 0, // Default: 0.0
-      kode: '04', // Default: '04'
-      cap: '', // Default: ''
-      ket: '', // Default: ''
-      jasa: 'A', // Default: 'A'
-      tidak: 0, // Default: 0
-      namapc: '', // Default: ''
+      opening: createInvoiceDto.opening ?? 0,
+      piutang: invoiceValue,
     };
 
     const invoice = await this.invoiceRepository.create(invoicePartial);
@@ -207,7 +124,9 @@ export class InvoiceService extends BaseService {
     const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
 
     const invoicePartial: Partial<Invoice> = {
+      ...DEFAULT_INVOICE,
       id: invoiceId,
+      special: 'SA',
       refNo: dto.refNo?.toUpperCase(),
       date: invoiceDate,
       entityId: ENTITY_PK_OPENING,
@@ -218,94 +137,12 @@ export class InvoiceService extends BaseService {
       isCash: false,
       dueDate: invoiceDate,
       taxDate: invoiceDate,
-      special: 'SA',
       remark: dto.remark ?? ' ',
       value: 0,
       opening: 0,
       rate: currencyRate,
       oleh: olehTimestamp,
-      serie: ' ',
-      taxInvoice: ' ',
-      po: ' ',
-      remark1: ' ',
-      returnTo: '',
-      transfer: 'n/a',
-      piutang: 0,
-      tunai: 0,
-      credit: 0,
-      debit: 0,
-      isPaid: false,
-      discount: 0,
-      discount1: 0,
-      discount2: 0,
-      discount3: 0,
-      tax: 0,
-      freight: 0,
-      option: 0,
-      cetak: 0,
-      dp: 0,
-      voucher: 0,
-      jam: 0,
-      noCard: ' ',
-      jenisCard: ' ',
-      ccardNama: ' ',
-      ccardOto: ' ',
-      ccardNilai: 0,
-      kembali: 0,
-      serialNumber: null,
-      xkirim: 0,
-      kunci: 0,
-      point: 0,
-      pax: 0,
-      dine: ' ',
-      postransfer: 0,
-      hadiah: null,
-      meja: ' ',
-      mobileId: ' ',
-      promoValue: 0,
-      promoDiscount: 0,
-      promoSales: 0,
-      sedan: ' ',
-      km: 0,
-      sedanCode: ' ',
-      pawal: 0,
-      okirim: null,
-      ivdTime: null,
-      cetak1: 0,
-      clientId: ' ',
-      posId: ' ',
-      camId: ' ',
-      promog: ' ',
-      waste: 0,
-      gratis: 0,
-      sj: '',
       tglSj: new Date(),
-      pilih: 0,
-      value1: 0,
-      ratep: 1.0,
-      epajak: null,
-      persen: 0,
-      mobile: 0,
-      fg: 0,
-      poAmount: 0,
-      expire: 0,
-      app: 0,
-      zap: 0,
-      lain: '',
-      scan1: '',
-      scan2: '',
-      scan3: '',
-      scan4: '',
-      inv12: 1,
-      canvas: '01',
-      tambah: '',
-      fee: 0,
-      kode: '04',
-      cap: '',
-      ket: '',
-      jasa: 'A',
-      tidak: 0,
-      namapc: '',
     };
 
     const invoice = await this.invoiceRepository.create(invoicePartial);
@@ -330,7 +167,7 @@ export class InvoiceService extends BaseService {
       const unitName = unitRecord?.cUNIdesc ?? stockDetail.unit ?? 'def';
       const qty = line.qty ?? 0;
       const factor = stockDetail.conversionFactor ?? 1;
-      const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId);
+      const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId, dto.warehouseId);
 
       const stock = await this.stockRepository.findOne({ where: { cSTKpk: stockDetail.stockId } });
       const basePrice = currencyRate === 1
@@ -340,61 +177,20 @@ export class InvoiceService extends BaseService {
       const computedAmount = qty * computedPrice;
 
       await this.invoiceDetailRepository.create({
+        ...DEFAULT_INVOICE_DETAIL,
         id: detailId,
         invoiceId,
         stockId: stockDetail.stockId,
         qtyIn: qty,
-        qtyOut: 0,
         zQtyIn: qty * factor,
-        zQtyOut: 0,
         price: computedPrice,
-        disc1: 0,
-        disc2: 0,
-        disc3: 0,
-        disc: 0,
-        accQty: 0,
-        accEnt: 0,
         order,
         code: (line.stockCode ?? stockDetail.code ?? 'def').toUpperCase(),
         factor,
-        ivdSplit: 0,
         unit: unitName,
         amount: computedAmount,
-        accQtyTransfer: 0,
         onHand,
-        adjust: 0,
-        porderId: ' ',
-        cost: 0,
-        pokok: 0,
         stkppn: 1,
-        serialNumber: null,
-        xkirim: null,
-        sn: null,
-        memo: null,
-        kirim: 1,
-        id1: ' ',
-        id2: ' ',
-        id3: ' ',
-        batch: ' ',
-        expire: null,
-        ven: 0,
-        venp: 0,
-        ven1: 0,
-        venp1: 0,
-        promoCard: null,
-        inipromo: 0,
-        resep: null,
-        persen: 0,
-        tgl: null,
-        nota: null,
-        po: 0,
-        stockId1: null,
-        qtyResep: 0,
-        edit: 0,
-        disct: null,
-        pilih1: 0,
-        pilih2: 0,
-        discx: 0,
       });
     }
 
@@ -425,6 +221,8 @@ export class InvoiceService extends BaseService {
       const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
 
       const invoiceData: Partial<Invoice> = {
+        ...DEFAULT_INVOICE,
+        special: 'SA',
         refNo: invoiceDto.refNo?.toUpperCase(),
         date: invoiceDate,
         entityId: trimmedSupplierId,
@@ -433,96 +231,13 @@ export class InvoiceService extends BaseService {
         warehouseId: invoiceDto.warehouseId,
         exchangeId: exchangeId,
         isCash: invoiceDto.isCash ?? false,
-        dueDate: invoiceDate, // due date = invoice date
-        taxDate: invoiceDate, // tax date = invoice date
-        special: 'SA',       // 'SA' = Saldo Awal (opening balance)
+        dueDate: invoiceDate,
+        taxDate: invoiceDate,
         remark: invoiceDto.remark ?? ' ',
-        value: 0,            // amount goes into opening, not value
-        opening: invoiceValue, // store the actual amount here
+        value: 0,
+        opening: invoiceValue,
         rate: currencyRate,
         oleh: olehTimestamp,
-        serie: ' ',
-        taxInvoice: ' ',
-        po: ' ',
-        remark1: ' ',
-        returnTo: '',
-        transfer: 'n/a',
-        piutang: 0,          // 0 for opening balance
-        tunai: 0,
-        credit: 0,
-        debit: 0,
-        isPaid: false,
-        discount: 0,
-        discount1: 0,
-        discount2: 0,
-        discount3: 0,
-        tax: 0,
-        freight: 0,
-        option: 0,
-        cetak: 0,
-        dp: 0,
-        voucher: 0,
-        jam: 0,
-        noCard: ' ',
-        jenisCard: ' ',
-        ccardNama: ' ',
-        ccardOto: ' ',
-        ccardNilai: 0,
-        kembali: 0,
-        serialNumber: null,
-        xkirim: 0,
-        kunci: 0,
-        point: 0,
-        pax: 0,
-        dine: ' ',
-        postransfer: 0,
-        hadiah: null,
-        meja: ' ',
-        mobileId: ' ',
-        promoValue: 0,
-        promoDiscount: 0,
-        promoSales: 0,
-        sedan: ' ',
-        km: 0,
-        sedanCode: ' ',
-        pawal: 0,
-        okirim: null,
-        ivdTime: null,
-        cetak1: 0,
-        clientId: ' ',
-        posId: ' ',
-        camId: ' ',
-        promog: ' ',
-        waste: 0,
-        gratis: 0,
-        sj: '',
-        tglSj: null,
-        pilih: 0,
-        value1: 0,
-        ratep: 1.0,
-        epajak: null,
-        persen: 0,
-        mobile: 0,
-        fg: 0,
-        poAmount: 0,
-        expire: 0,
-        app: 0,
-        zap: 0,
-        lain: '',
-        scan1: '',
-        scan2: '',
-        scan3: '',
-        scan4: '',
-        inv12: 1,
-        canvas: '01',
-        tambah: '',
-        fee: 0,
-        kode: '04',
-        cap: '',
-        ket: '',
-        jasa: 'A',
-        tidak: 0,
-        namapc: '',
       };
 
       if (invoiceDto.id && invoiceDto.id.trim() !== '') {
@@ -534,7 +249,6 @@ export class InvoiceService extends BaseService {
         }
       }
 
-      // For new invoice, generate an id and save
       const id = await this.generateUniqueId(
         (id) => this.invoiceRepository.exists(id),
         'Unable to generate a unique primary key for Invoice',
@@ -568,6 +282,8 @@ export class InvoiceService extends BaseService {
       const currencyRate = currencyRecord ? Number(currencyRecord.nEXCvalue) : 1.0;
 
       const invoiceData: Partial<Invoice> = {
+        ...DEFAULT_INVOICE,
+        special: 'SA',
         refNo: invoiceDto.refNo?.toUpperCase(),
         date: invoiceDate,
         entityId: trimmedCustomerId,
@@ -576,96 +292,13 @@ export class InvoiceService extends BaseService {
         warehouseId: invoiceDto.warehouseId,
         exchangeId: exchangeId,
         isCash: invoiceDto.isCash ?? false,
-        dueDate: invoiceDate, // due date = invoice date
-        taxDate: invoiceDate, // tax date = invoice date
-        special: 'SA',       // 'SA' = Saldo Awal (opening balance)
+        dueDate: invoiceDate,
+        taxDate: invoiceDate,
         remark: invoiceDto.remark ?? ' ',
-        value: 0,            // amount goes into opening, not value
-        opening: invoiceValue, // store the actual amount here
+        value: 0,
+        opening: invoiceValue,
         rate: currencyRate,
         oleh: olehTimestamp,
-        serie: ' ',
-        taxInvoice: ' ',
-        po: ' ',
-        remark1: ' ',
-        returnTo: '',
-        transfer: 'n/a',
-        piutang: 0,          // 0 for opening balance
-        tunai: 0,
-        credit: 0,
-        debit: 0,
-        isPaid: false,
-        discount: 0,
-        discount1: 0,
-        discount2: 0,
-        discount3: 0,
-        tax: 0,
-        freight: 0,
-        option: 0,
-        cetak: 0,
-        dp: 0,
-        voucher: 0,
-        jam: 0,
-        noCard: ' ',
-        jenisCard: ' ',
-        ccardNama: ' ',
-        ccardOto: ' ',
-        ccardNilai: 0,
-        kembali: 0,
-        serialNumber: null,
-        xkirim: 0,
-        kunci: 0,
-        point: 0,
-        pax: 0,
-        dine: ' ',
-        postransfer: 0,
-        hadiah: null,
-        meja: ' ',
-        mobileId: ' ',
-        promoValue: 0,
-        promoDiscount: 0,
-        promoSales: 0,
-        sedan: ' ',
-        km: 0,
-        sedanCode: ' ',
-        pawal: 0,
-        okirim: null,
-        ivdTime: null,
-        cetak1: 0,
-        clientId: ' ',
-        posId: ' ',
-        camId: ' ',
-        promog: ' ',
-        waste: 0,
-        gratis: 0,
-        sj: '',
-        tglSj: null,
-        pilih: 0,
-        value1: 0,
-        ratep: 1.0,
-        epajak: null,
-        persen: 0,
-        mobile: 0,
-        fg: 0,
-        poAmount: 0,
-        expire: 0,
-        app: 0,
-        zap: 0,
-        lain: '',
-        scan1: '',
-        scan2: '',
-        scan3: '',
-        scan4: '',
-        inv12: 1,
-        canvas: '01',
-        tambah: '',
-        fee: 0,
-        kode: '04',
-        cap: '',
-        ket: '',
-        jasa: 'A',
-        tidak: 0,
-        namapc: '',
       };
 
       if (invoiceDto.id && invoiceDto.id.trim() !== '') {
@@ -873,7 +506,7 @@ export class InvoiceService extends BaseService {
       const unitName = unitRecord?.cUNIdesc ?? stockDetail.unit ?? 'def';
       const qty = line.qty ?? 0;
       const factor = stockDetail.conversionFactor ?? 1;
-      const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId);
+      const onHand = await this.invoiceDetailRepository.getOnHandByStockId(stockDetail.stockId, dto.warehouseId);
 
       const stock = await this.stockRepository.findOne({ where: { cSTKpk: stockDetail.stockId } });
       const basePrice = currencyRate === 1
@@ -945,8 +578,8 @@ export class InvoiceService extends BaseService {
     return this.mapToResponseDto(updated!);
   }
 
-  async getOnHandByStockId(stockId: string): Promise<number> {
-    return this.invoiceDetailRepository.getOnHandByStockId(stockId);
+  async getOnHandByStockId(stockId: string, warehouseId: string): Promise<number> {
+    return this.invoiceDetailRepository.getOnHandByStockId(stockId, warehouseId);
   }
 
   async findAll(): Promise<InvoiceResponseDto[]> {
@@ -994,6 +627,15 @@ export class InvoiceService extends BaseService {
     if (!exists) {
       throw new NotFoundException(`Invoice with id '${id}' not found`);
     }
+    await this.invoiceRepository.delete(id);
+  }
+
+  async removeOpeningBalance(id: string): Promise<void> {
+    const invoice = await this.invoiceRepository.findOne(id);
+    if (!invoice) {
+      throw new NotFoundException(`Opening balance invoice with id '${id}' not found`);
+    }
+    await this.invoiceDetailRepository.deleteByInvoiceId(id);
     await this.invoiceRepository.delete(id);
   }
 

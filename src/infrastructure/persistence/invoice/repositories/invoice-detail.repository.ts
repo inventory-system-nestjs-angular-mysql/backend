@@ -37,11 +37,23 @@ export class InvoiceDetailRepository implements IInvoiceDetailRepository {
     return count > 0;
   }
 
-  async getOnHandByStockId(stockId: string): Promise<number> {
+  async getOnHandByStockId(stockId: string, warehouseId: string): Promise<number> {
     const result = await this.repository
-      .createQueryBuilder('ivd')
-      .select('SUM(ivd.nIVDzqtyin) - SUM(ivd.nIVDzqtyout)', 'onHand')
-      .where('ivd.cIVDfkSTK = :stockId', { stockId })
+      .createQueryBuilder('d')
+      .innerJoin('invoice', 'i', 'd.cIVDfkINV = i.cINVpk')
+      .select(
+        `SUM(CASE WHEN (i.cINVTransfer IS NULL OR i.cINVTransfer = 'n/a') THEN (d.nIVDzqtyin - d.nIVDzqtyout) ELSE 0 END) + ` +
+        `SUM(CASE WHEN (i.cINVTransfer IS NOT NULL AND i.cINVTransfer <> 'n/a') THEN (d.nIVDzqtyout - d.nIVDzqtyin) ELSE 0 END)`,
+        'onHand',
+      )
+      .where(`i.cINVspecial <> 'KS'`)
+      .andWhere('d.cIVDfkSTK = :stockId', { stockId })
+      .andWhere('d.nIVDkirim = 1')
+      .andWhere(
+        `((i.cINVfkWHS = :warehouseId AND i.cINVfkWHS IS NOT NULL AND (i.cINVTransfer IS NULL OR i.cINVTransfer = 'n/a')) OR ` +
+        `(i.cINVTransfer = :warehouseId AND i.cINVTransfer IS NOT NULL AND i.cINVTransfer <> 'n/a'))`,
+        { warehouseId },
+      )
       .getRawOne();
     return Number(result?.onHand ?? 0);
   }

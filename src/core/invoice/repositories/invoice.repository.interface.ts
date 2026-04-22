@@ -15,5 +15,6 @@ export interface IInvoiceRepository {
   countByExchangeId(exchangeId: string): Promise<number>;
   countByWarehouseId(warehouseId: string): Promise<number>;
   countByEntityId(entityId: string): Promise<number>;
+  countBySalesmanId(salesmanId: string): Promise<number>;
 }
 

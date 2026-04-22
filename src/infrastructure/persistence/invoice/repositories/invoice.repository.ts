@@ -114,5 +114,9 @@ export class InvoiceRepository implements IInvoiceRepository {
   async countByEntityId(entityId: string): Promise<number> {
     return this.repository.count({ where: { cINVfkENT: entityId } });
   }
+
+  async countBySalesmanId(salesmanId: string): Promise<number> {
+    return this.repository.count({ where: { cINVfkSAM: salesmanId } });
+  }
 }
 
