@@ -15,6 +15,7 @@ import { SalesmanModule } from './presentation/salesman/salesman.module';
 import { InvoiceModule } from './presentation/invoice/invoice.module';
 import { CurrencyModule } from './presentation/currency/currency.module';
 import { PurchasingModule } from './presentation/purchasing/purchasing.module';
+import { PurchaseReturnModule } from './presentation/purchase-return/purchase-return.module';
 import { UploadModule } from './presentation/upload/upload.module';
 
 @Module({
@@ -44,6 +45,7 @@ import { UploadModule } from './presentation/upload/upload.module';
     InvoiceModule,
     CurrencyModule,
     PurchasingModule,
+    PurchaseReturnModule,
     UploadModule,
   ],
 })
