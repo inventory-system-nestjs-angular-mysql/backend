@@ -23,6 +23,30 @@ export class PayheaderTypeOrmEntity {
   @Column({ type: 'decimal', precision: 15, scale: 2, name: 'nPHYcash', default: 0 })
   nPHYcash: number;
 
+  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'nPHYtransfer', default: 0 })
+  nPHYtransfer: number;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'nPHYccard', default: 0 })
+  nPHYccard: number;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'nPHYdcard', default: 0 })
+  nPHYdcard: number;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'nPHYvoucher', default: 0 })
+  nPHYvoucher: number;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'nPHYcheque', default: 0 })
+  nPHYcheque: number;
+
+  @Column({ type: 'varchar', length: 23, name: 'cPHYbank1', nullable: true })
+  cPHYbank1: string | null;
+
+  @Column({ type: 'varchar', length: 30, name: 'cPHYcekno', nullable: true })
+  cPHYcekno: string | null;
+
+  @Column({ type: 'date', name: 'cPHYcektgl', nullable: true })
+  cPHYcektgl: Date | null;
+
   @Column({ type: 'char', length: 2, name: 'cPHYCode', nullable: true })
   cPHYCode: string | null;
 
